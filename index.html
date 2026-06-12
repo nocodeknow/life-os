@@ -509,14 +509,27 @@
             <!-- Tasks Page -->
             <div id="page-tasks" class="page hidden page-transition p-6 md:p-10">
                 <div class="max-w-4xl mx-auto">
-                    <div class="flex items-center justify-between mb-8">
-                        <div>
-                            <h2 class="font-display font-bold text-3xl text-gray-900 mb-2">Tasks</h2>
-                            <p class="text-gray-500">Manage your to-do list</p>
-                        </div>
-                        <button onclick="toggleDoneTasksArchive()" class="px-4 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 hover:scale-105 active:scale-95 text-gray-700 text-sm font-semibold flex items-center gap-2 transition-all shadow-sm">
-                            <i data-lucide="archive" class="w-4 h-4 text-gray-500"></i>
-                            <span>Completed Archive</span>
+                    <div class="mb-8">
+                        <h2 class="font-display font-bold text-3xl text-gray-900 mb-2">Tasks</h2>
+                        <p class="text-gray-500">Manage your to-do list</p>
+                    </div>
+
+                    <!-- Tasks Tabs Header -->
+                    <div class="flex items-center gap-2 border-b border-gray-150/50 pb-3 mb-6 flex-wrap">
+                        <button onclick="switchTaskTab('active')" data-tab="active" class="tab-btn px-4 py-2 text-sm font-semibold text-indigo-600 active">
+                            Active Tasks
+                        </button>
+                        <button onclick="switchTaskTab('todo')" data-tab="todo" class="tab-btn px-4 py-2 text-sm font-semibold text-gray-500">
+                            Not Started
+                        </button>
+                        <button onclick="switchTaskTab('wip')" data-tab="wip" class="tab-btn px-4 py-2 text-sm font-semibold text-gray-500">
+                            In Progress
+                        </button>
+                        <button onclick="switchTaskTab('waiting')" data-tab="waiting" class="tab-btn px-4 py-2 text-sm font-semibold text-gray-500">
+                            Waiting
+                        </button>
+                        <button onclick="switchTaskTab('done')" data-tab="done" class="tab-btn px-4 py-2 text-sm font-semibold text-gray-500">
+                            Completed
                         </button>
                     </div>
 
@@ -1861,20 +1874,25 @@
 
         function switchTaskTab(tab) {
             state.currentTaskTab = tab;
-            document.querySelectorAll('[data-tab]').forEach(btn => {
-                btn.classList.remove('active');
-                btn.classList.add('text-gray-500');
+            document.querySelectorAll('#page-tasks [data-tab]').forEach(btn => {
+                btn.className = 'tab-btn px-4 py-2 text-sm font-semibold text-gray-500';
             });
-            const activeBtn = document.querySelector('[data-tab="' + tab + '"]');
+            const activeBtn = document.querySelector(`#page-tasks [data-tab="${tab}"]`);
             if (activeBtn) {
-                activeBtn.classList.add('active');
-                activeBtn.classList.remove('text-gray-500');
+                activeBtn.className = 'tab-btn px-4 py-2 text-sm font-semibold text-indigo-600 active';
             }
             renderTasks();
         }
 
         function renderTasks() {
-            const filtered = state.tasks.filter(t => t.status !== 'done');
+            const tab = state.currentTaskTab || 'active';
+            let filtered = [];
+            
+            if (tab === 'active') {
+                filtered = state.tasks.filter(t => t.status !== 'done');
+            } else {
+                filtered = state.tasks.filter(t => t.status === tab);
+            }
 
             // Sort tasks chronologically by due date (earliest first, no due date at the bottom)
             filtered.sort((a, b) => {
@@ -1968,24 +1986,30 @@
                     `;
                 }).join('');
             } else {
+                const emptyMsg = tab === 'done' ? 'No completed tasks' : 'No tasks in this category';
                 tableHtml += `
                     <tr>
-                        <td colspan="4" class="py-8 text-center text-gray-400 text-sm italic">
-                            No tasks created yet. Click "+ New Task" below to start!
+                        <td colspan="5" class="py-8 text-center text-gray-400 text-sm italic">
+                            ${emptyMsg}
                         </td>
                     </tr>
                 `;
             }
 
+            if (tab !== 'done') {
+                tableHtml += `
+                            <tr class="hover:bg-gray-50/50 cursor-pointer transition-colors duration-150" onclick="addNewInlineTask()">
+                                <td colspan="5" class="py-3 px-4 text-gray-400 text-sm font-medium">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="plus" class="w-4 h-4 text-gray-400"></i>
+                                        <span>New Task</span>
+                                    </div>
+                                </td>
+                            </tr>
+                `;
+            }
+
             tableHtml += `
-                        <tr class="hover:bg-gray-50/50 cursor-pointer transition-colors duration-150" onclick="addNewInlineTask()">
-                            <td colspan="4" class="py-3 px-4 text-gray-400 text-sm font-medium">
-                                <div class="flex items-center gap-2">
-                                    <i data-lucide="plus" class="w-4 h-4 text-gray-400"></i>
-                                    <span>New Task</span>
-                                </div>
-                            </td>
-                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -2015,12 +2039,16 @@
         function addNewInlineTask() {
             pushHistory();
             const newId = Date.now();
+            const defaultStatus = (state.currentTaskTab && state.currentTaskTab !== 'active' && state.currentTaskTab !== 'done')
+                ? state.currentTaskTab
+                : 'todo';
+
             state.tasks.push({
                 id: newId,
                 text: '',
                 notes: '',
                 projectId: state.currentProjectId || null,
-                status: 'todo',
+                status: defaultStatus,
                 date: new Date().toISOString(),
                 dueDate: null
             });
