@@ -1,0 +1,3352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Management Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'sans-serif'],
+                        'display': ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            min-height: 100vh;
+        }
+
+        .gradient-text {
+            color: #111827;
+        }
+
+        .gradient-bg {
+            background-color: #4f46e5;
+        }
+
+        .gradient-bg-subtle {
+            background-color: #f0f2fe;
+        }
+
+        .glass-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+        }
+
+        .glass-card-hover:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            transform: translateY(-1px);
+        }
+
+        .sidebar-glass {
+            background: #ffffff;
+            border-right: 1px solid #e5e7eb;
+        }
+
+        .nav-item {
+            transition: all 0.15s ease-out;
+            color: #4b5563;
+        }
+
+        .nav-item:hover {
+            background-color: #f3f4f6;
+            color: #111827;
+        }
+
+        .nav-item.active {
+            background-color: #4f46e5;
+            color: white;
+            box-shadow: none;
+        }
+
+        .nav-item.active:hover {
+            transform: none;
+        }
+
+        .stat-card {
+            transition: transform 0.15s ease-out;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background-color: #4f46e5;
+            color: white;
+            transition: background-color 0.15s ease-out;
+        }
+
+        .btn-primary:hover {
+            background-color: #4338ca;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-primary:active {
+            background-color: #3730a3;
+        }
+
+        .tab-btn {
+            transition: all 0.15s ease-out;
+            position: relative;
+        }
+
+        .tab-btn::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: #4f46e5;
+            transition: all 0.15s ease-out;
+        }
+
+        .tab-btn.active::after {
+            width: 100%;
+        }
+
+        .tab-btn.active {
+            color: #4f46e5;
+            font-weight: 600;
+        }
+
+        .priority-immediate, .priority-high, .priority-urgent {
+            background-color: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+        }
+
+        .priority-med, .priority-need {
+            background-color: #fef3c7;
+            color: #b45309;
+            border: 1px solid #fcd34d;
+        }
+
+        .priority-flexible, .priority-low {
+            background-color: #d1fae5;
+            color: #047857;
+            border: 1px solid #6ee7b7;
+        }
+
+        .priority-want {
+            background-color: #e0e7ff;
+            color: #4338ca;
+            border: 1px solid #a5b4fc;
+        }
+
+        .checkbox-custom {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 1.5px solid #d1d5db;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.1s ease-out;
+            position: relative;
+        }
+
+        .checkbox-custom:checked {
+            background-color: #4f46e5;
+            border-color: #4f46e5;
+        }
+
+        .checkbox-custom:checked::after {
+            content: '\2713';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .task-item {
+            transition: background-color 0.15s ease-out;
+        }
+
+        .task-item:hover {
+            background: #f9fafb;
+            box-shadow: none;
+        }
+
+        .task-item.done .task-text {
+            text-decoration: line-through;
+            opacity: 0.5;
+        }
+
+        .brain-dump-item {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+        }
+
+        .note-item {
+            transition: all 0.15s ease-out;
+        }
+
+        .note-item:hover {
+            background-color: #f3f4f6;
+        }
+
+        .note-item.active {
+            background-color: #e0e7ff;
+            border-left: 3px solid #4f46e5;
+        }
+
+        .mobile-nav-item {
+            transition: all 0.15s ease-out;
+            position: relative;
+        }
+
+        .mobile-nav-item.active {
+            color: #4f46e5;
+        }
+
+        .mobile-nav-item.active::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 16px;
+            height: 2px;
+            background-color: #4f46e5;
+        }
+
+        .delete-btn {
+            opacity: 0;
+            transition: opacity 0.15s ease-out;
+        }
+
+        .task-item:hover .delete-btn,
+        .brain-dump-item:hover .delete-btn,
+        .note-item:hover .delete-btn {
+            opacity: 1;
+        }
+
+        .empty-state {
+            opacity: 0.5;
+        }
+
+        textarea { resize: none; }
+
+        input:focus, textarea:focus, select:focus { outline: none; }
+
+        .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.3);
+            border-radius: 3px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.5);
+        }
+
+        .safe-area-inset-bottom {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        /* Restore list styles within contenteditables */
+        #note-content ul, #mobile-note-content ul {
+            list-style-type: disc !important;
+            padding-left: 1.5rem !important;
+            margin-top: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+
+        #note-content ol, #mobile-note-content ol {
+            list-style-type: decimal !important;
+            padding-left: 1.5rem !important;
+            margin-top: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+
+        #note-content li, #mobile-note-content li {
+            margin-bottom: 0.25rem !important;
+        }
+
+        /* Native placeholder support for contenteditable */
+        [contenteditable=true]:empty:before{
+            content: attr(placeholder);
+            color: #9ca3af;
+            cursor: text;
+        }
+    </style>
+</head>
+<body class="overflow-hidden">
+    <div class="flex h-screen relative">
+        <!-- Desktop Sidebar -->
+        <aside id="sidebar" class="hidden md:flex flex-col w-72 sidebar-glass fixed h-full z-30">
+            <div class="p-8 pb-4">
+                <h1 class="font-display font-extrabold text-2xl gradient-text">LifeOS</h1>
+                <p class="text-xs text-gray-400 mt-1 font-medium">Personal Dashboard</p>
+                <div id="sync-status" class="mt-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                    <span class="w-1.5 h-1.5 rounded-full bg-gray-400" id="sync-status-dot"></span>
+                    <span id="sync-status-text">Connecting...</span>
+                </div>
+            </div>
+
+            <nav class="flex-1 px-4 py-4 space-y-2">
+                <button onclick="showPage('dashboard')" data-page="dashboard" class="nav-item active w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button onclick="showPage('projects')" data-page="projects" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600">
+                    <i data-lucide="folder" class="w-5 h-5"></i>
+                    <span>Projects</span>
+                </button>
+                <button onclick="showPage('tasks')" data-page="tasks" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600">
+                    <i data-lucide="check-square" class="w-5 h-5"></i>
+                    <span>Tasks</span>
+                </button>
+
+                <button onclick="showPage('notes')" data-page="notes" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600">
+                    <i data-lucide="file-text" class="w-5 h-5"></i>
+                    <span>Notes</span>
+                </button>
+                <button onclick="showPage('shopping')" data-page="shopping" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600">
+                    <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                    <span>Shopping</span>
+                </button>
+                <button onclick="showPage('trash')" data-page="trash" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600">
+                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                    <span>Recycle Bin</span>
+                </button>
+            </nav>
+
+            <div class="p-4 space-y-2 border-t border-gray-150/50">
+                <input type="file" id="import-file-input" accept=".json" onchange="handleImportFile(event)" class="hidden">
+                <button onclick="exportData()" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    <span>Export Data</span>
+                </button>
+                <button onclick="triggerImport()" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors">
+                    <i data-lucide="upload" class="w-4 h-4"></i>
+                    <span>Import Data</span>
+                </button>
+                <button onclick="logout()" id="logout-btn" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 hover:text-red-600 transition-all hidden">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <span>Log Out</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 md:ml-72 overflow-y-auto pb-24 md:pb-0 scrollbar-thin">
+            <!-- Dashboard Page -->
+            <div id="page-dashboard" class="page page-transition p-6 md:p-10">
+                <div class="max-w-6xl mx-auto">
+                    <!-- Dynamic Greeting Header -->
+                    <div class="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="font-display font-bold text-3xl md:text-4xl text-gray-900 mb-2">Good <span id="greeting-time" class="gradient-text"></span></h2>
+                            <p class="text-gray-500">Here is your high-performance overview for today</p>
+                        </div>
+                        <div class="flex items-center gap-2 bg-white px-4 py-2 border border-gray-100 rounded-xl shadow-sm text-xs font-semibold text-gray-500">
+                            <i data-lucide="calendar" class="w-4 h-4 text-indigo-500"></i>
+                            <span id="db-current-date">June 2, 2026</span>
+                        </div>
+                    </div>
+
+                    <!-- Metrics Grid (Triad of Curated Cards) -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
+                        <!-- Active Flow count -->
+                        <div class="stat-card glass-card rounded-2xl p-6 relative">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 rounded-xl gradient-bg flex items-center justify-center">
+                                    <i data-lucide="activity" class="w-6 h-6 text-white"></i>
+                                </div>
+                            </div>
+                            <p class="text-3xl font-bold text-gray-900" id="db-stat-active">0</p>
+                            <p class="text-xs text-gray-400 mt-1 font-medium">Active Tasks</p>
+                        </div>
+
+                        <!-- Completion Rate Progress bar -->
+                        <div class="stat-card glass-card rounded-2xl p-6 relative">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
+                                    <i data-lucide="check-circle" class="w-6 h-6 text-white"></i>
+                                </div>
+                                <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100" id="db-stat-progress-text">0%</span>
+                            </div>
+                            <!-- Inline Progress Bar -->
+                            <div class="w-full bg-gray-100 rounded-full h-2 mb-2 mt-4">
+                                <div id="db-stat-progress-bar" class="bg-gradient-to-r from-emerald-500 to-teal-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                            <p class="text-xs text-gray-400 font-medium">Focus Completion Rate</p>
+                        </div>
+
+                        <!-- Structured Notes captured -->
+                        <div class="stat-card glass-card rounded-2xl p-6 relative">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
+                                    <i data-lucide="file-text" class="w-6 h-6 text-white"></i>
+                                </div>
+                            </div>
+                            <p class="text-3xl font-bold text-gray-900" id="db-stat-notes">0</p>
+                            <p class="text-xs text-gray-400 mt-1 font-medium">Knowledge Hub Notes</p>
+                        </div>
+                    </div>
+
+                    <!-- Left/Right Columns Grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Left Column: Focus Tasks Board -->
+                        <div class="glass-card rounded-2xl p-6">
+                            <h3 class="font-display font-semibold text-lg text-gray-900 mb-6 flex items-center gap-2 border-b border-gray-100 pb-3">
+                                <i data-lucide="list-todo" class="w-5 h-5 text-indigo-500"></i>
+                                Upcoming Focus Board
+                            </h3>
+                            <div id="db-recent-tasks-container">
+                                <!-- Rendered dynamically as a premium inline Notion-style task list -->
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Brain Dump & Capture Transformation Hub -->
+                        <div class="glass-card rounded-2xl p-6">
+                            <h3 class="font-display font-semibold text-lg text-gray-900 mb-6 flex items-center gap-2 border-b border-gray-100 pb-3">
+                                <i data-lucide="brain" class="w-5 h-5 text-pink-500"></i>
+                                Brain Dump Capture Hub
+                            </h3>
+                            
+                            <!-- Inline Quick Capture form -->
+                            <div class="flex gap-2.5 mb-6">
+                                <input type="text" id="db-braindump-input" placeholder="What is on your mind? Capture instantly..." class="flex-grow px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all font-medium" onkeypress="if(event.key==='Enter')addDashboardBrainDump()">
+                                <button onclick="addDashboardBrainDump()" class="btn-primary px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 shadow-sm hover:scale-105 active:scale-95 transition-transform"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                            </div>
+
+                            <!-- List of thoughts -->
+                            <div id="db-braindump-list" class="space-y-3 overflow-y-auto max-h-[360px] pr-1 scrollbar-thin">
+                                <!-- Rendered dynamically with Convert to Task, Convert to Note, Trash actions -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Urgent Shopping Widgets -->
+                    <div id="urgent-shopping-widget" class="glass-card rounded-2xl p-6 mt-8 hidden border border-red-100">
+                        <h3 class="font-display font-semibold text-lg text-gray-900 mb-4 flex items-center gap-2">
+                            <i data-lucide="alert-circle" class="w-5 h-5 text-red-500"></i>
+                            Attention Required: Urgent Shopping
+                        </h3>
+                        <div id="urgent-shopping-list" class="space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Projects Page -->
+            <div id="page-projects" class="page hidden page-transition p-6 md:p-10">
+                <div class="max-w-6xl mx-auto">
+                    <div class="mb-8">
+                        <h2 class="font-display font-bold text-3xl text-gray-900 mb-2">Projects</h2>
+                        <p class="text-gray-500">Manage your large-scale objectives</p>
+                    </div>
+
+                    <!-- Project List View -->
+                    <div id="projects-list-view">
+                        <div class="glass-card rounded-2xl p-5 mb-8">
+                            <div class="flex flex-col sm:flex-row gap-3 items-start">
+                                <div class="flex-1 flex flex-col gap-2 w-full">
+                                    <input type="text" id="project-input" placeholder="Project name..." class="flex-1 px-4 py-3 bg-white/50 border border-gray-200 rounded-xl text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" onkeypress="if(event.key==='Enter')addProject()">
+                                    <textarea id="project-desc-input" placeholder="Project description (optional)..." class="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all resize-none h-20"></textarea>
+                                </div>
+                                <button onclick="addProject()" class="btn-primary px-6 py-3 rounded-xl text-sm font-medium flex items-center gap-2 justify-center h-[46px]">
+                                    <i data-lucide="plus" class="w-4 h-4"></i>
+                                    <span>Create</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="project-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        </div>
+                    </div>
+
+                    <!-- Project Detail View -->
+                    <div id="project-detail-view" class="hidden">
+                        <button onclick="closeProjectDetails()" class="mb-6 flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors">
+                            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                            Back to Projects
+                        </button>
+                        
+                        <div class="glass-card rounded-2xl p-6 md:p-8 mb-8">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <h3 id="detail-project-name" class="font-display font-bold text-2xl text-gray-900 mb-2">Project Name</h3>
+                                    <p id="detail-project-desc" class="text-gray-600">Project Description</p>
+                                </div>
+                                <div id="detail-project-status" class="px-3 py-1 rounded-full text-sm font-medium"></div>
+                            </div>
+
+                        </div>
+
+                        <h4 class="font-display font-semibold text-xl text-gray-900 mb-4">Project Tasks</h4>
+                        <div id="project-task-list" class="space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tasks Page -->
+            <div id="page-tasks" class="page hidden page-transition p-6 md:p-10">
+                <div class="max-w-4xl mx-auto">
+                    <div class="flex items-center justify-between mb-8">
+                        <div>
+                            <h2 class="font-display font-bold text-3xl text-gray-900 mb-2">Tasks</h2>
+                            <p class="text-gray-500">Manage your to-do list</p>
+                        </div>
+                        <button onclick="toggleDoneTasksArchive()" class="px-4 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 hover:scale-105 active:scale-95 text-gray-700 text-sm font-semibold flex items-center gap-2 transition-all shadow-sm">
+                            <i data-lucide="archive" class="w-4 h-4 text-gray-500"></i>
+                            <span>Completed Archive</span>
+                        </button>
+                    </div>
+
+                    <div id="task-list" class="space-y-2">
+                        <div class="empty-state text-center py-12">
+                            <i data-lucide="inbox" class="w-12 h-12 mx-auto text-gray-300 mb-3"></i>
+                            <p class="text-gray-400 text-sm">No tasks in this category</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- Shopping List Page -->
+            <div id="page-shopping" class="page hidden page-transition p-6 md:p-10">
+                <div class="max-w-4xl mx-auto">
+                    <div class="mb-8">
+                        <h2 class="font-display font-bold text-3xl text-gray-900 mb-2">Shopping List</h2>
+                        <p class="text-gray-500">Track items you need to buy</p>
+                    </div>
+
+                    <div class="glass-card rounded-2xl p-5 mb-6">
+                        <div class="flex flex-col sm:flex-row gap-3 items-start">
+                            <div class="flex-1 w-full">
+                                <input type="text" id="shopping-input" placeholder="Add an item to buy..." class="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" onkeypress="if(event.key==='Enter')addShoppingItem()">
+                            </div>
+                            <select id="shopping-priority" class="px-4 py-3 bg-white/50 border border-gray-200 rounded-xl text-sm focus:border-indigo-400 transition-all">
+                                <option value="urgent">Urgent</option>
+                                <option value="need" selected>Need</option>
+                                <option value="want">Want</option>
+                            </select>
+                            <button onclick="addShoppingItem()" class="btn-primary px-6 py-3 rounded-xl text-sm font-medium flex items-center gap-2 justify-center h-[46px]">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                <span>Add</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="shopping-list" class="space-y-2">
+                        <div class="empty-state text-center py-12">
+                            <i data-lucide="shopping-bag" class="w-12 h-12 mx-auto text-gray-300 mb-3"></i>
+                            <p class="text-gray-400 text-sm">Your shopping list is empty</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes Page -->
+            <div id="page-notes" class="page hidden page-transition h-full min-h-screen">
+                <div class="flex h-full">
+                    <div class="w-full md:w-72 md:border-r md:border-gray-200/50 p-4 flex flex-col md:min-h-screen max-h-screen">
+                        <div class="flex items-center justify-between mb-4 flex-shrink-0">
+                            <h3 class="font-display font-semibold text-lg text-gray-900">Knowledge Hub</h3>
+                            <button onclick="createNote()" class="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center text-white hover:scale-110 transition-transform">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Search Box -->
+                        <div class="mb-3 relative flex-shrink-0">
+                            <input type="text" id="note-search" placeholder="Search title or content..." class="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs" oninput="triggerNotesSearch()">
+                            <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-gray-400"></i>
+                        </div>
+
+                        <!-- Dynamic Tags Cloud Filter -->
+                        <div id="notes-tags-cloud" class="flex flex-wrap gap-1.5 mb-3 pb-3 border-b border-gray-100 flex-shrink-0 max-h-24 overflow-y-auto scrollbar-thin">
+                            <!-- Populated dynamically -->
+                        </div>
+
+                        <!-- Notes List Container -->
+                        <div id="notes-list" class="space-y-2 overflow-y-auto flex-1 scrollbar-thin">
+                            <div class="empty-state text-center py-8">
+                                <p class="text-gray-400 text-sm">No notes yet</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="hidden md:flex flex-1 flex-col p-6">
+                        <div id="note-editor-empty" class="flex-1 flex items-center justify-center">
+                            <div class="text-center">
+                                <i data-lucide="file-text" class="w-16 h-16 mx-auto text-gray-200 mb-4"></i>
+                                <p class="text-gray-400">Select a note or create a new one</p>
+                            </div>
+                        </div>
+                        <div id="note-editor-active" class="hidden flex-1 flex flex-col">
+                            <div class="flex items-center justify-between mb-2">
+                                <input type="text" id="note-title" placeholder="Untitled Note" class="font-display font-semibold text-2xl text-gray-900 bg-transparent border-none w-full focus:outline-none" oninput="saveCurrentNote()">
+                                <button onclick="deleteCurrentNote()" class="opacity-100 w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                            <!-- Tags Input -->
+                            <div class="mb-3">
+                                <input type="text" id="note-tags" placeholder="Add tags separated by commas (e.g., programming, setup)..." class="text-xs text-gray-400 bg-transparent border-none w-full focus:outline-none border-b border-gray-100 pb-1" oninput="saveCurrentNote()">
+                            </div>
+                            
+                            <!-- Formatting Toolbar -->
+                            <div class="flex gap-1 mb-3 pb-2 border-b border-gray-100 flex-shrink-0 items-center">
+                                <button onclick="formatNote('bold')" title="Bold" class="w-7 h-7 rounded hover:bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors">
+                                    <i data-lucide="bold" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button onclick="formatNote('italic')" title="Italic" class="w-7 h-7 rounded hover:bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors">
+                                    <i data-lucide="italic" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button onclick="formatNote('underline')" title="Underline" class="w-7 h-7 rounded hover:bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors">
+                                    <i data-lucide="underline" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button onclick="formatNote('insertUnorderedList')" title="Bullet List" class="w-7 h-7 rounded hover:bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors">
+                                    <i data-lucide="list" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button onclick="formatNote('insertOrderedList')" title="Numbered List" class="w-7 h-7 rounded hover:bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors">
+                                    <i data-lucide="list-ordered" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <div class="w-px h-4 bg-gray-200 mx-1"></div>
+                                <button onclick="formatNote('undo')" title="Undo" class="w-7 h-7 rounded hover:bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors">
+                                    <i data-lucide="undo-2" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button onclick="formatNote('redo')" title="Redo" class="w-7 h-7 rounded hover:bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors">
+                                    <i data-lucide="redo-2" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Content Editable Body -->
+                            <div id="note-content" contenteditable="true" placeholder="Start writing..." class="flex-1 text-gray-700 text-base leading-relaxed focus:outline-none overflow-y-auto scrollbar-thin max-h-[calc(100vh-280px)] min-h-[500px] pr-2" oninput="saveCurrentNote()"></div>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Note Editor Modal -->
+                    <div id="mobile-note-editor" class="md:hidden fixed inset-0 bg-white/95 backdrop-blur-xl z-50 hidden flex-col p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <button onclick="closeMobileNoteEditor()" class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                            </button>
+                            <button onclick="deleteCurrentNote(); closeMobileNoteEditor();" class="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-500">
+                                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        <input type="text" id="mobile-note-title" placeholder="Untitled Note" class="font-display font-semibold text-2xl text-gray-900 bg-transparent border-none w-full focus:outline-none mb-2" oninput="saveCurrentNote()">
+                        <!-- Tags Input Mobile -->
+                        <div class="mb-3">
+                            <input type="text" id="mobile-note-tags" placeholder="Add tags (comma separated)..." class="text-xs text-gray-400 bg-transparent border-none w-full focus:outline-none border-b border-gray-100 pb-1" oninput="saveCurrentNote()">
+                        </div>
+
+                        <!-- Mobile Formatting Toolbar -->
+                        <div class="flex gap-1.5 mb-3 pb-2 border-b border-gray-100 flex-shrink-0 items-center">
+                            <button onclick="formatNote('bold')" title="Bold" class="w-8 h-8 rounded hover:bg-gray-100 flex items-center justify-center text-gray-600">
+                                <i data-lucide="bold" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="formatNote('italic')" title="Italic" class="w-8 h-8 rounded hover:bg-gray-100 flex items-center justify-center text-gray-600">
+                                <i data-lucide="italic" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="formatNote('underline')" title="Underline" class="w-8 h-8 rounded hover:bg-gray-100 flex items-center justify-center text-gray-600">
+                                <i data-lucide="underline" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="formatNote('insertUnorderedList')" title="Bullet List" class="w-8 h-8 rounded hover:bg-gray-100 flex items-center justify-center text-gray-600">
+                                <i data-lucide="list" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="formatNote('insertOrderedList')" title="Numbered List" class="w-8 h-8 rounded hover:bg-gray-100 flex items-center justify-center text-gray-600">
+                                <i data-lucide="list-ordered" class="w-4 h-4"></i>
+                            </button>
+                            <div class="w-px h-4 bg-gray-200 mx-1"></div>
+                            <button onclick="formatNote('undo')" title="Undo" class="w-8 h-8 rounded hover:bg-gray-100 flex items-center justify-center text-gray-600">
+                                <i data-lucide="undo-2" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="formatNote('redo')" title="Redo" class="w-8 h-8 rounded hover:bg-gray-100 flex items-center justify-center text-gray-600">
+                                <i data-lucide="redo-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+
+                        <!-- Mobile Content Editable Body -->
+                        <div id="mobile-note-content" contenteditable="true" placeholder="Start writing..." class="flex-1 text-gray-700 text-base leading-relaxed focus:outline-none overflow-y-auto pr-1 min-h-[400px]" oninput="saveCurrentNote()"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recycle Bin Page -->
+            <div id="page-trash" class="page hidden page-transition p-6 md:p-10">
+                <div class="max-w-4xl mx-auto">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                        <div>
+                            <h2 class="font-display font-bold text-3xl text-gray-900 mb-2">Recycle Bin</h2>
+                            <p class="text-gray-500">Restore or permanently delete items from any module</p>
+                        </div>
+                        <button onclick="emptyTrash()" class="px-4 py-2.5 rounded-xl border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 text-sm font-medium flex items-center gap-2 justify-center transition-colors">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            <span>Empty Trash Bin</span>
+                        </button>
+                    </div>
+
+                    <div id="trash-list" class="space-y-3">
+                        <div class="empty-state text-center py-12">
+                            <i data-lucide="trash-2" class="w-12 h-12 mx-auto text-gray-300 mb-3"></i>
+                            <p class="text-gray-400 text-sm">Your Recycle Bin is empty</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Mobile Bottom Navigation -->
+        <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-200/50 z-40 safe-area-inset-bottom">
+            <div class="flex items-center justify-around py-3 px-2">
+                <button onclick="showPage('dashboard')" data-page="dashboard" class="mobile-nav-item active relative flex flex-col items-center gap-1 px-3 py-2">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                    <span class="text-[10px] font-medium">Home</span>
+                </button>
+                <button onclick="showPage('projects')" data-page="projects" class="mobile-nav-item relative flex flex-col items-center gap-1 px-3 py-2 text-gray-400">
+                    <i data-lucide="folder" class="w-5 h-5"></i>
+                    <span class="text-[10px] font-medium">Projects</span>
+                </button>
+                <button onclick="showPage('tasks')" data-page="tasks" class="mobile-nav-item relative flex flex-col items-center gap-1 px-3 py-2 text-gray-400">
+                    <i data-lucide="check-square" class="w-5 h-5"></i>
+                    <span class="text-[10px] font-medium">Tasks</span>
+                </button>
+
+                <button onclick="showPage('notes')" data-page="notes" class="mobile-nav-item relative flex flex-col items-center gap-1 px-3 py-2 text-gray-400">
+                    <i data-lucide="file-text" class="w-5 h-5"></i>
+                    <span class="text-[10px] font-medium">Notes</span>
+                </button>
+                <button onclick="showPage('shopping')" data-page="shopping" class="mobile-nav-item relative flex flex-col items-center gap-1 px-3 py-2 text-gray-400">
+                    <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                    <span class="text-[10px] font-medium">Shop</span>
+                </button>
+                <button onclick="showPage('trash')" data-page="trash" class="mobile-nav-item relative flex flex-col items-center gap-1 px-3 py-2 text-gray-400">
+                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                    <span class="text-[10px] font-medium">Trash</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Mobile Sync Indicator -->
+    <div class="md:hidden fixed top-4 right-4 z-40 bg-white/90 backdrop-blur border border-gray-200 px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5 text-[9px] font-semibold text-gray-500">
+        <span class="w-1.5 h-1.5 rounded-full bg-gray-400" id="mobile-sync-status-dot"></span>
+        <span id="mobile-sync-status-text">Connecting...</span>
+    </div>
+
+    <!-- Authentication Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md opacity-100 pointer-events-auto transition-all duration-300">
+        <div class="glass-card w-full max-w-md mx-4 rounded-2xl overflow-hidden shadow-2xl p-8 flex flex-col bg-white border border-gray-200">
+            <!-- Logo / Header -->
+            <div class="text-center mb-8">
+                <h2 class="font-display font-extrabold text-3xl text-gray-900 mb-2">LifeOS</h2>
+                <p class="text-sm text-gray-500 font-medium" id="auth-subtitle">Sign in to sync your Life OS dashboard</p>
+            </div>
+
+            <!-- Form -->
+            <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Email Address</label>
+                    <input type="email" id="auth-email" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="name@example.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Password</label>
+                    <input type="password" id="auth-password" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="••••••••">
+                </div>
+
+                <div id="auth-error" class="hidden text-xs text-red-500 font-medium bg-red-50 border border-red-100 rounded-lg p-3">
+                    <!-- Error messages -->
+                </div>
+
+                <button type="submit" id="auth-submit-btn" class="w-full btn-primary py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-transform">
+                    <span>Sign In</span>
+                </button>
+            </form>
+
+            <!-- Toggle Auth Mode -->
+            <div class="text-center mt-6">
+                <button onclick="toggleAuthMode()" id="auth-toggle-btn" class="text-xs text-indigo-500 hover:text-indigo-600 font-semibold transition-colors">
+                    Need to set up an account? Sign Up
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="global-history-controls" class="fixed bottom-20 md:bottom-8 right-6 flex items-center gap-2 transform translate-y-24 opacity-0 transition-all duration-300 z-50">
+        <button id="global-undo-btn" onclick="undo()" class="bg-gray-900 text-white px-4 py-3 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex items-center gap-2 hover:bg-gray-800 hover:scale-105 active:scale-95 transition-all">
+            <i data-lucide="undo-2" class="w-4 h-4"></i>
+            <span class="text-sm font-medium">Undo</span>
+        </button>
+        <button id="global-redo-btn" onclick="redo()" class="bg-gray-900 text-white px-4 py-3 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex items-center gap-2 hover:bg-gray-800 hover:scale-105 active:scale-95 transition-all">
+            <i data-lucide="redo-2" class="w-4 h-4"></i>
+            <span class="text-sm font-medium">Redo</span>
+        </button>
+    </div>
+
+    <!-- Custom Edit Modal -->
+    <div id="edit-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
+        <div class="glass-card w-full max-w-lg mx-4 rounded-2xl overflow-hidden shadow-2xl transform scale-95 transition-all duration-300 p-6 md:p-8 flex flex-col max-h-[90vh]">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="edit-modal-title" class="font-display font-bold text-xl text-gray-900">Edit Item</h3>
+                <button onclick="closeEditModal()" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            
+            <!-- Form Elements -->
+            <div class="space-y-4 overflow-y-auto pr-1 scrollbar-thin">
+                <!-- Text/Name Input -->
+                <div>
+                    <label id="edit-modal-text-label" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Title</label>
+                    <input type="text" id="edit-modal-text" class="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all">
+                </div>
+
+                <!-- Notes/Description TextArea (Conditional) -->
+                <div id="edit-modal-desc-container" class="hidden">
+                    <label id="edit-modal-desc-label" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Notes</label>
+                    <textarea id="edit-modal-desc" class="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all h-24 resize-none"></textarea>
+                </div>
+
+                <!-- Project Selector (Conditional) -->
+                <div id="edit-modal-project-container" class="hidden">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Project</label>
+                    <select id="edit-modal-project" class="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all">
+                    </select>
+                </div>
+
+                <!-- Due Date Selector (Conditional) -->
+                <div id="edit-modal-due-date-container" class="hidden">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Due Date</label>
+                    <input type="date" id="edit-modal-due-date" class="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all text-gray-500">
+                </div>
+
+                <!-- Priority Selector (Conditional) -->
+                <div id="edit-modal-priority-container" class="hidden">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Priority</label>
+                    <select id="edit-modal-priority" class="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all">
+                    </select>
+                </div>
+
+                <!-- Status Selector (Conditional) -->
+                <div id="edit-modal-status-container" class="hidden">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Status</label>
+                    <select id="edit-modal-status" class="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all">
+                    </select>
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100/50">
+                <button onclick="closeEditModal()" class="px-5 py-3 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors">
+                    Cancel
+                </button>
+                <button onclick="saveEditModal()" class="btn-primary px-6 py-3 rounded-xl text-sm font-medium flex items-center gap-2">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    <span>Save Changes</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completed Tasks Archive Modal -->
+    <div id="archive-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
+        <div class="glass-card w-full max-w-3xl mx-4 rounded-2xl overflow-hidden shadow-2xl transform scale-95 transition-all duration-300 p-6 md:p-8 flex flex-col max-h-[85vh]">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-500">
+                        <i data-lucide="archive" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-display font-bold text-xl text-gray-900">Completed Tasks Archive</h3>
+                        <p class="text-xs text-gray-400 font-medium">Archive of all completed objectives</p>
+                    </div>
+                </div>
+                <button onclick="closeArchiveModal()" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            
+            <!-- Table Container -->
+            <div class="flex-1 overflow-y-auto pr-1 scrollbar-thin max-h-[60vh]">
+                <div id="archive-table-container">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let state = {
+            projects: [],
+            tasks: [],
+            shoppingList: [],
+            brainDumps: [],
+            notes: [],
+            trash: [],
+            currentPage: 'dashboard',
+            currentTaskTab: 'todo',
+            currentNoteId: null,
+            currentProjectId: null,
+            noteSearchQuery: '',
+            noteActiveTagFilter: 'All'
+        };
+
+        let stateHistory = [];
+        let stateRedoHistory = [];
+        const MAX_HISTORY = 30;
+
+        const PROJECT_COLORS = [
+            { bg: 'bg-purple-50 text-purple-700 border-purple-200', dot: 'bg-purple-500' },
+            { bg: 'bg-pink-50 text-pink-700 border-pink-200', dot: 'bg-pink-500' },
+            { bg: 'bg-blue-50 text-blue-700 border-blue-200', dot: 'bg-blue-500' },
+            { bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
+            { bg: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-500' },
+            { bg: 'bg-indigo-50 text-indigo-700 border-indigo-200', dot: 'bg-indigo-500' },
+            { bg: 'bg-rose-50 text-rose-700 border-rose-200', dot: 'bg-rose-500' },
+            { bg: 'bg-cyan-50 text-cyan-700 border-cyan-200', dot: 'bg-cyan-500' }
+        ];
+
+        function getProjectBadge(project) {
+            if (!project) return '<span class="text-gray-300">—</span>';
+            const index = Math.abs(project.id) % PROJECT_COLORS.length;
+            const color = PROJECT_COLORS[index];
+            return `<span class="${color.bg} px-2.5 py-0.5 rounded-full text-xs font-semibold border inline-flex items-center gap-1">${escapeHtml(project.name)}</span>`;
+        }
+
+        function getStatusBadge(status) {
+            if (status === 'todo') {
+                return `<span class="bg-amber-50/70 text-amber-800 border border-amber-100 px-2.5 py-0.5 rounded-full text-xs font-medium inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Not started</span>`;
+            } else if (status === 'wip') {
+                return `<span class="bg-blue-50/70 text-blue-800 border border-blue-100 px-2.5 py-0.5 rounded-full text-xs font-medium inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>WIP</span>`;
+            } else if (status === 'waiting') {
+                return `<span class="bg-purple-50/70 text-purple-800 border border-purple-100 px-2.5 py-0.5 rounded-full text-xs font-medium inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>Waiting</span>`;
+            } else if (status === 'done') {
+                return `<span class="bg-gray-50/70 text-gray-600 border border-gray-100 px-2.5 py-0.5 rounded-full text-xs font-medium inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>Done</span>`;
+            }
+            return '';
+        }
+
+        function getStatusDropdown(task) {
+            let selectClass = 'px-2.5 py-0.5 rounded-full text-xs font-semibold border cursor-pointer focus:ring-1 focus:ring-indigo-100 transition-all appearance-none text-center ';
+            if (task.status === 'todo') selectClass += 'bg-amber-50 text-amber-800 border-amber-200';
+            else if (task.status === 'wip') selectClass += 'bg-blue-50 text-blue-800 border-blue-200';
+            else if (task.status === 'waiting') selectClass += 'bg-purple-50 text-purple-800 border-purple-200';
+            else if (task.status === 'done') selectClass += 'bg-gray-100 text-gray-600 border-gray-300';
+            else selectClass += 'bg-gray-50 text-gray-500 border-gray-200';
+            
+            return `
+                <select class="${selectClass}" onchange="updateTaskStatus(${task.id}, this.value)">
+                    <option value="todo" ${task.status === 'todo' ? 'selected' : ''}>Not started</option>
+                    <option value="wip" ${task.status === 'wip' ? 'selected' : ''}>WIP</option>
+                    <option value="waiting" ${task.status === 'waiting' ? 'selected' : ''}>Waiting</option>
+                    <option value="done" ${task.status === 'done' ? 'selected' : ''}>Done</option>
+                </select>
+            `;
+        }
+
+        function updateTaskStatus(id, newStatus) {
+            const task = state.tasks.find(t => t.id === id);
+            if (task) {
+                if (task.status !== newStatus) {
+                    pushHistory();
+                    task.status = newStatus;
+                    saveState();
+                    renderTasks();
+                    renderArchiveTasks();
+                    if (state.currentProjectId) {
+                        renderProjectTasks();
+                    }
+                    updateDashboard();
+                }
+            }
+        }
+
+        function getProjectDropdown(task) {
+            let selectClass = 'text-xs font-semibold cursor-pointer focus:ring-1 focus:ring-indigo-100 transition-all appearance-none text-center max-w-[130px] truncate ';
+            if (task.projectId) {
+                selectClass += 'px-2.5 py-0.5 rounded-full border bg-indigo-50 text-indigo-800 border-indigo-200';
+            } else {
+                selectClass += 'bg-transparent border-none text-transparent w-full h-7';
+            }
+            
+            const options = state.projects.map(p => 
+                `<option value="${p.id}" ${task.projectId === p.id ? 'selected' : ''} class="text-gray-700">${escapeHtml(p.name)}</option>`
+            ).join('');
+            
+            return `
+                <select class="${selectClass}" onchange="updateTaskProject(${task.id}, this.value)">
+                    <option value="" ${!task.projectId ? 'selected' : ''} class="text-gray-400"></option>
+                    ${options}
+                </select>
+            `;
+        }
+
+        function formatDueDate(dueDateStr) {
+            if (!dueDateStr) return '<span class="text-gray-300">—</span>';
+            const date = new Date(dueDateStr);
+            const parts = dueDateStr.split('-');
+            if (parts.length === 3) {
+                const d = new Date(parts[0], parts[1] - 1, parts[2]);
+                return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            }
+            return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        }
+
+        function pushHistory() {
+            stateHistory.push(JSON.stringify(state));
+            if (stateHistory.length > MAX_HISTORY) {
+                stateHistory.shift();
+            }
+            stateRedoHistory = [];
+            updateUndoUI();
+        }
+
+        function undo() {
+            if (stateHistory.length === 0) return;
+            stateRedoHistory.push(JSON.stringify(state));
+            if (stateRedoHistory.length > MAX_HISTORY) {
+                stateRedoHistory.shift();
+            }
+            
+            state = JSON.parse(stateHistory.pop());
+            saveState();
+            
+            refreshActivePage();
+            updateUndoUI();
+        }
+
+        function redo() {
+            if (stateRedoHistory.length === 0) return;
+            stateHistory.push(JSON.stringify(state));
+            if (stateHistory.length > MAX_HISTORY) {
+                stateHistory.shift();
+            }
+            
+            state = JSON.parse(stateRedoHistory.pop());
+            saveState();
+            
+            refreshActivePage();
+            updateUndoUI();
+        }
+
+        function refreshActivePage() {
+            if (state.currentPage === 'dashboard') updateDashboard();
+            if (state.currentPage === 'projects') renderProjects();
+            if (state.currentPage === 'tasks') renderTasks();
+            if (state.currentPage === 'shopping') renderShoppingList();
+            if (state.currentPage === 'braindump') renderBrainDumps();
+            if (state.currentPage === 'notes') renderNotes();
+            if (state.currentPage === 'trash') renderTrash();
+            
+            if (state.currentPage === 'projects' && state.currentProjectId) {
+                viewProjectDetails(state.currentProjectId);
+            }
+        }
+        
+        function updateUndoUI() {
+            const container = document.getElementById('global-history-controls');
+            const undoBtn = document.getElementById('global-undo-btn');
+            const redoBtn = document.getElementById('global-redo-btn');
+            
+            if (container) {
+                const hasUndo = stateHistory.length > 0;
+                const hasRedo = stateRedoHistory.length > 0;
+                
+                if (hasUndo || hasRedo) {
+                    container.classList.remove('translate-y-24', 'opacity-0');
+                    container.classList.add('translate-y-0', 'opacity-100');
+                } else {
+                    container.classList.add('translate-y-24', 'opacity-0');
+                    container.classList.remove('translate-y-0', 'opacity-100');
+                }
+                
+                if (undoBtn) {
+                    if (hasUndo) {
+                        undoBtn.removeAttribute('disabled');
+                        undoBtn.classList.remove('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+                    } else {
+                        undoBtn.setAttribute('disabled', 'true');
+                        undoBtn.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+                    }
+                }
+                
+                if (redoBtn) {
+                    if (hasRedo) {
+                        redoBtn.removeAttribute('disabled');
+                        redoBtn.classList.remove('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+                    } else {
+                        redoBtn.setAttribute('disabled', 'true');
+                        redoBtn.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+                    }
+                }
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.getAttribute('contenteditable') === 'true') return;
+            
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key.toLowerCase() === 'z') {
+                    e.preventDefault();
+                    undo();
+                } else if (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z')) {
+                    e.preventDefault();
+                    redo();
+                }
+            }
+        });
+
+        let activeEditTarget = {
+            type: null,
+            id: null
+        };
+
+        function openEditModal(type, id) {
+            let item, list;
+            if (type === 'task' || type === 'projectTask') {
+                list = state.tasks;
+            } else if (type === 'shopping') {
+                list = state.shoppingList;
+            } else if (type === 'braindump') {
+                list = state.brainDumps;
+            } else if (type === 'project') {
+                list = state.projects;
+            }
+            
+            item = list.find(t => t.id === id);
+            if (!item) return;
+
+            activeEditTarget.type = type;
+            activeEditTarget.id = id;
+
+            // Set Title
+            let titleText = 'Edit Item';
+            if (type === 'task' || type === 'projectTask') titleText = 'Edit Task';
+            else if (type === 'shopping') titleText = 'Edit Shopping Item';
+            else if (type === 'braindump') titleText = 'Edit Thought';
+            else if (type === 'project') titleText = 'Edit Project';
+            document.getElementById('edit-modal-title').textContent = titleText;
+
+            // Setup Main Input
+            const textInput = document.getElementById('edit-modal-text');
+            const textLabel = document.getElementById('edit-modal-text-label');
+            textInput.value = type === 'project' ? (item.name || '') : (item.text || '');
+            textLabel.textContent = type === 'project' ? 'Project Name' : 'Title / Text';
+
+            // Setup Description/Notes (Conditional)
+            const descContainer = document.getElementById('edit-modal-desc-container');
+            const descLabel = document.getElementById('edit-modal-desc-label');
+            const descInput = document.getElementById('edit-modal-desc');
+            
+            if (type === 'task' || type === 'projectTask') {
+                descContainer.classList.remove('hidden');
+                descLabel.textContent = 'Notes';
+                descInput.value = item.notes || '';
+            } else if (type === 'project') {
+                descContainer.classList.remove('hidden');
+                descLabel.textContent = 'Description';
+                descInput.value = item.description || '';
+            } else {
+                descContainer.classList.add('hidden');
+            }
+
+            // Setup Project Selector (Conditional)
+            const projectContainer = document.getElementById('edit-modal-project-container');
+            const projectSelect = document.getElementById('edit-modal-project');
+            
+            if (type === 'task' || type === 'projectTask') {
+                projectContainer.classList.remove('hidden');
+                projectSelect.innerHTML = '<option value="">No Project</option>' + state.projects.map(p => 
+                    `<option value="${p.id}" ${item.projectId === p.id ? 'selected' : ''}>${escapeHtml(p.name)}</option>`
+                ).join('');
+            } else {
+                projectContainer.classList.add('hidden');
+            }
+
+            // Setup Due Date Selector (Conditional)
+            const dueDateContainer = document.getElementById('edit-modal-due-date-container');
+            const dueDateInput = document.getElementById('edit-modal-due-date');
+            
+            if (type === 'task' || type === 'projectTask') {
+                dueDateContainer.classList.remove('hidden');
+                dueDateInput.value = item.dueDate ? item.dueDate : '';
+            } else {
+                dueDateContainer.classList.add('hidden');
+            }
+
+            // Setup Priority Selector (Conditional)
+            const priorityContainer = document.getElementById('edit-modal-priority-container');
+            const prioritySelect = document.getElementById('edit-modal-priority');
+            
+            if (type === 'shopping') {
+                priorityContainer.classList.remove('hidden');
+                prioritySelect.innerHTML = `
+                    <option value="urgent" ${item.priority === 'urgent' ? 'selected' : ''}>Urgent</option>
+                    <option value="need" ${item.priority === 'need' ? 'selected' : ''}>Need</option>
+                    <option value="want" ${item.priority === 'want' ? 'selected' : ''}>Want</option>
+                `;
+            } else {
+                priorityContainer.classList.add('hidden');
+            }
+
+            // Setup Status Selector (Conditional)
+            const statusContainer = document.getElementById('edit-modal-status-container');
+            const statusSelect = document.getElementById('edit-modal-status');
+            
+            if (type === 'shopping') {
+                statusContainer.classList.remove('hidden');
+                statusSelect.innerHTML = `
+                    <option value="todo" ${item.status === 'todo' ? 'selected' : ''}>To Buy</option>
+                    <option value="ordered" ${item.status === 'ordered' ? 'selected' : ''}>Ordered</option>
+                    <option value="delivered" ${item.status === 'delivered' ? 'selected' : ''}>Delivered</option>
+                `;
+            } else {
+                statusContainer.classList.add('hidden');
+            }
+
+            // Animate Modal Open
+            const modal = document.getElementById('edit-modal');
+            const modalBox = modal.querySelector('.glass-card');
+            
+            modal.classList.remove('pointer-events-none', 'opacity-0');
+            modal.classList.add('opacity-100');
+            modalBox.classList.remove('scale-95');
+            modalBox.classList.add('scale-100');
+
+            lucide.createIcons();
+        }
+
+        function closeEditModal() {
+            const modal = document.getElementById('edit-modal');
+            const modalBox = modal.querySelector('.glass-card');
+            
+            modal.classList.add('pointer-events-none', 'opacity-0');
+            modal.classList.remove('opacity-100');
+            modalBox.classList.add('scale-95');
+            modalBox.classList.remove('scale-100');
+            
+            activeEditTarget.type = null;
+            activeEditTarget.id = null;
+        }
+
+        function saveEditModal() {
+            const type = activeEditTarget.type;
+            const id = activeEditTarget.id;
+            if (!type || !id) return;
+
+            let item, list;
+            if (type === 'task' || type === 'projectTask') {
+                list = state.tasks;
+            } else if (type === 'shopping') {
+                list = state.shoppingList;
+            } else if (type === 'braindump') {
+                list = state.brainDumps;
+            } else if (type === 'project') {
+                list = state.projects;
+            }
+            
+            item = list.find(t => t.id === id);
+            if (!item) return;
+
+            const textValue = document.getElementById('edit-modal-text').value.trim();
+            if (!textValue) {
+                alert('Title/Name cannot be empty.');
+                return;
+            }
+
+            pushHistory();
+
+            // Save text/name
+            if (type === 'project') {
+                item.name = textValue;
+            } else {
+                item.text = textValue;
+            }
+
+            // Save notes/description (Conditional)
+            const descInput = document.getElementById('edit-modal-desc');
+            if (type === 'task' || type === 'projectTask') {
+                item.notes = descInput.value.trim();
+            } else if (type === 'project') {
+                item.description = descInput.value.trim();
+            }
+
+            // Save project (Conditional for tasks)
+            if (type === 'task' || type === 'projectTask') {
+                const projectSelect = document.getElementById('edit-modal-project');
+                const newProjectId = projectSelect.value ? parseInt(projectSelect.value) : null;
+                item.projectId = newProjectId;
+            }
+
+            // Save priority & status (Conditional)
+            if (type === 'shopping') {
+                const prioritySelect = document.getElementById('edit-modal-priority');
+                item.priority = prioritySelect.value;
+                const statusSelect = document.getElementById('edit-modal-status');
+                item.status = statusSelect.value;
+            }
+
+            // Save due date (Conditional)
+            if (type === 'task' || type === 'projectTask') {
+                const dueDateInput = document.getElementById('edit-modal-due-date');
+                item.dueDate = dueDateInput.value ? dueDateInput.value : null;
+            }
+
+            saveState();
+            closeEditModal();
+
+            // Refresh UI
+            if (state.currentPage === 'dashboard') updateDashboard();
+            if (state.currentPage === 'projects') {
+                if (state.currentProjectId) renderProjectTasks();
+                renderProjects();
+                if (state.currentProjectId) viewProjectDetails(state.currentProjectId); // Refresh title/desc/status
+            }
+            if (state.currentPage === 'tasks') renderTasks();
+            if (state.currentPage === 'shopping') renderShoppingList();
+            if (state.currentPage === 'braindump') renderBrainDumps();
+        }
+
+        function editItem(type, id) {
+            openEditModal(type, id);
+        }
+
+        // Global key/click listeners for closing the modal
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeEditModal();
+                closeArchiveModal();
+            }
+        });
+        
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('edit-modal');
+            if (e.target === modal) {
+                closeEditModal();
+            }
+            const archiveModal = document.getElementById('archive-modal');
+            if (e.target === archiveModal) {
+                closeArchiveModal();
+            }
+        });
+
+        // Initialize Supabase Client
+        const supabaseUrl = 'https://pnpnpuscbmtuaggvvcdx.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBucG5wdXNjYm10dWFnZ3Z2Y2R4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNDA0NzgsImV4cCI6MjA5NjgxNjQ3OH0._uN3TiU5E5AIXtKba7FPmNlcTHobkGMB0ZBgTcm4DYM';
+        const supabaseClient = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
+        let supabaseUser = null;
+        let authMode = 'signIn';
+        let isSyncing = false;
+        let syncTimeout = null;
+
+        function setSyncStatus(status, text) {
+            const dot = document.getElementById('sync-status-dot');
+            const textEl = document.getElementById('sync-status-text');
+            const mDot = document.getElementById('mobile-sync-status-dot');
+            const mTextEl = document.getElementById('mobile-sync-status-text');
+
+            const updateEl = (d, t) => {
+                if (!d || !t) return;
+                t.textContent = text;
+                d.className = 'w-1.5 h-1.5 rounded-full ';
+                if (status === 'syncing') {
+                    d.className += 'bg-blue-500 animate-pulse';
+                } else if (status === 'synced') {
+                    d.className += 'bg-emerald-500';
+                } else if (status === 'error') {
+                    d.className += 'bg-red-500';
+                } else {
+                    d.className += 'bg-gray-400';
+                }
+            };
+
+            updateEl(dot, textEl);
+            updateEl(mDot, mTextEl);
+        }
+
+        function toggleAuthMode() {
+            const form = document.getElementById('auth-form');
+            const title = document.querySelector('#auth-overlay h2');
+            const subtitle = document.getElementById('auth-subtitle');
+            const submitBtn = document.getElementById('auth-submit-btn');
+            const toggleBtn = document.getElementById('auth-toggle-btn');
+            const errorEl = document.getElementById('auth-error');
+
+            if (errorEl) errorEl.classList.add('hidden');
+
+            if (authMode === 'signIn') {
+                authMode = 'signUp';
+                title.textContent = 'Create Account';
+                subtitle.textContent = 'Set up your secure Life OS dashboard';
+                submitBtn.querySelector('span').textContent = 'Sign Up & Initialize';
+                toggleBtn.textContent = 'Already have an account? Sign In';
+            } else {
+                authMode = 'signIn';
+                title.textContent = 'LifeOS';
+                subtitle.textContent = 'Sign in to sync your Life OS dashboard';
+                submitBtn.querySelector('span').textContent = 'Sign In';
+                toggleBtn.textContent = 'Need to set up an account? Sign Up';
+            }
+        }
+
+        async function handleAuthSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
+            const errorEl = document.getElementById('auth-error');
+            const submitBtn = document.getElementById('auth-submit-btn');
+
+            if (errorEl) errorEl.classList.add('hidden');
+            
+            const originalBtnText = submitBtn.querySelector('span').textContent;
+            submitBtn.querySelector('span').textContent = 'Processing...';
+            submitBtn.setAttribute('disabled', 'true');
+
+            try {
+                if (!supabaseClient) throw new Error('Supabase client not loaded.');
+                if (authMode === 'signIn') {
+                    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                    if (error) throw error;
+                } else {
+                    const { error } = await supabaseClient.auth.signUp({ email, password });
+                    if (error) throw error;
+                    alert('Sign up successful! You can now log in.');
+                    authMode = 'signIn';
+                    toggleAuthMode();
+                }
+            } catch (err) {
+                console.error('Auth error:', err);
+                if (errorEl) {
+                    errorEl.textContent = err.message || 'An error occurred during authentication.';
+                    errorEl.classList.remove('hidden');
+                }
+            } finally {
+                submitBtn.querySelector('span').textContent = originalBtnText;
+                submitBtn.removeAttribute('disabled');
+            }
+        }
+
+        async function logout() {
+            if (confirm('Are you sure you want to log out? Local caching will remain, but cloud syncing will be disabled.')) {
+                try {
+                    if (supabaseClient) await supabaseClient.auth.signOut();
+                } catch (err) {
+                    console.error('Logout error:', err);
+                }
+            }
+        }
+
+        function loadState() {
+            if (supabaseClient) {
+                // Set up auth state change listener
+                supabaseClient.auth.onAuthStateChange((event, session) => {
+                    const authOverlay = document.getElementById('auth-overlay');
+                    const logoutBtn = document.getElementById('logout-btn');
+                    
+                    if (session) {
+                        supabaseUser = session.user;
+                        if (authOverlay) {
+                            authOverlay.classList.add('pointer-events-none', 'opacity-0');
+                            authOverlay.classList.remove('pointer-events-auto', 'opacity-100');
+                            setTimeout(() => {
+                                if (supabaseUser) authOverlay.classList.add('hidden');
+                            }, 300);
+                        }
+                        if (logoutBtn) logoutBtn.classList.remove('hidden');
+                        syncFromSupabase();
+                    } else {
+                        supabaseUser = null;
+                        if (authOverlay) {
+                            authOverlay.classList.remove('hidden');
+                            authOverlay.offsetHeight; // force reflow
+                            authOverlay.classList.remove('pointer-events-none', 'opacity-0');
+                            authOverlay.classList.add('pointer-events-auto', 'opacity-100');
+                        }
+                        if (logoutBtn) logoutBtn.classList.add('hidden');
+                        setSyncStatus('offline', 'Please Sign In');
+                    }
+                });
+            } else {
+                loadStateLocal();
+                setSyncStatus('offline', 'Offline Mode');
+            }
+        }
+
+        function loadStateLocal() {
+            const saved = localStorage.getItem('lifeOS_data');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                state.projects = parsed.projects || [];
+                state.tasks = parsed.tasks || [];
+                state.shoppingList = parsed.shoppingList || [];
+                state.brainDumps = parsed.brainDumps || [];
+                state.notes = parsed.notes || [];
+                state.trash = parsed.trash || [];
+                
+                runStateMigrations();
+            }
+        }
+
+        function runStateMigrations() {
+            state.tasks.forEach(t => {
+                if (t.status === 'pending') t.status = 'todo';
+            });
+
+            state.shoppingList.forEach(item => {
+                if (item.status === 'done') item.status = 'delivered';
+                if (!item.status) item.status = 'todo';
+                if (item.notes === undefined || item.notes === null) item.notes = '';
+            });
+        }
+
+        async function syncFromSupabase() {
+            if (!supabaseClient || !supabaseUser) return;
+            setSyncStatus('syncing', 'Syncing...');
+            try {
+                const { data, error } = await supabaseClient
+                    .from('user_data')
+                    .select('state, updated_at')
+                    .eq('user_id', supabaseUser.id)
+                    .maybeSingle();
+
+                if (error) throw error;
+
+                if (data) {
+                    const cloudState = data.state;
+                    const cloudUpdatedAt = new Date(data.updated_at).getTime();
+
+                    const localSaved = localStorage.getItem('lifeOS_data');
+                    const localUpdatedAt = parseInt(localStorage.getItem('lifeOS_updated_at') || '0');
+
+                    if (localSaved && localUpdatedAt > cloudUpdatedAt) {
+                        setSyncStatus('syncing', 'Pushing local...');
+                        await pushStateToSupabase(JSON.parse(localSaved), localUpdatedAt);
+                    } else {
+                        state.projects = cloudState.projects || [];
+                        state.tasks = cloudState.tasks || [];
+                        state.shoppingList = cloudState.shoppingList || [];
+                        state.brainDumps = cloudState.brainDumps || [];
+                        state.notes = cloudState.notes || [];
+                        state.trash = cloudState.trash || [];
+
+                        runStateMigrations();
+
+                        localStorage.setItem('lifeOS_data', JSON.stringify({
+                            projects: state.projects,
+                            tasks: state.tasks,
+                            shoppingList: state.shoppingList,
+                            brainDumps: state.brainDumps,
+                            notes: state.notes,
+                            trash: state.trash
+                        }));
+                        localStorage.setItem('lifeOS_updated_at', cloudUpdatedAt.toString());
+
+                        refreshActivePage();
+                    }
+                    setSyncStatus('synced', 'Cloud Synced');
+                } else {
+                    const localSaved = localStorage.getItem('lifeOS_data');
+                    if (localSaved) {
+                        const parsed = JSON.parse(localSaved);
+                        const updatedAt = Date.now();
+                        await pushStateToSupabase(parsed, updatedAt);
+                    } else {
+                        saveState();
+                    }
+                    setSyncStatus('synced', 'Cloud Synced');
+                }
+            } catch (err) {
+                console.error('Sync error:', err);
+                setSyncStatus('error', 'Sync Error');
+                loadStateLocal();
+            }
+        }
+
+        async function pushStateToSupabase(stateData, updatedAt) {
+            if (!supabaseClient || !supabaseUser) return;
+            try {
+                const { error } = await supabaseClient
+                    .from('user_data')
+                    .upsert({
+                        user_id: supabaseUser.id,
+                        state: stateData,
+                        updated_at: new Date(updatedAt).toISOString()
+                    });
+
+                if (error) throw error;
+            } catch (err) {
+                console.error('Push error:', err);
+                throw err;
+            }
+        }
+
+        function saveState() {
+            const stateData = {
+                projects: state.projects,
+                tasks: state.tasks,
+                shoppingList: state.shoppingList,
+                brainDumps: state.brainDumps,
+                notes: state.notes,
+                trash: state.trash
+            };
+            const updatedAt = Date.now();
+
+            localStorage.setItem('lifeOS_data', JSON.stringify(stateData));
+            localStorage.setItem('lifeOS_updated_at', updatedAt.toString());
+
+            if (supabaseClient && supabaseUser) {
+                setSyncStatus('syncing', 'Saving...');
+                if (syncTimeout) clearTimeout(syncTimeout);
+                syncTimeout = setTimeout(async () => {
+                    try {
+                        await pushStateToSupabase(stateData, updatedAt);
+                        setSyncStatus('synced', 'Cloud Synced');
+                    } catch (err) {
+                        setSyncStatus('error', 'Sync Failed');
+                    }
+                }, 1500);
+            }
+        }
+
+        function showPage(page) {
+            state.currentPage = page;
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+            document.getElementById('page-' + page).classList.remove('hidden');
+            
+            document.querySelectorAll('[data-page]').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.page === page) {
+                    btn.classList.add('active');
+                }
+            });
+
+            document.querySelectorAll('.mobile-nav-item').forEach(btn => {
+                if (btn.dataset.page === page) {
+                    btn.classList.add('active');
+                    btn.classList.remove('text-gray-400');
+                } else {
+                    btn.classList.remove('active');
+                    btn.classList.add('text-gray-400');
+                }
+            });
+
+            if (page === 'dashboard') updateDashboard();
+            if (page === 'projects') renderProjects();
+            if (page === 'tasks') renderTasks();
+            if (page === 'shopping') renderShoppingList();
+            if (page === 'notes') renderNotes();
+            if (page === 'trash') renderTrash();
+            
+            document.querySelector('main').scrollTop = 0;
+        }
+
+        function updateDashboard() {
+            // Update current date
+            const dateEl = document.getElementById('db-current-date');
+            if (dateEl) {
+                dateEl.textContent = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            }
+
+            const total = state.tasks.length;
+            const activeCount = state.tasks.filter(t => t.status !== 'done').length;
+            const completedCount = state.tasks.filter(t => t.status === 'done').length;
+            const progressPercent = total === 0 ? 0 : Math.round((completedCount / total) * 100);
+            
+            // Set Triad Metrics
+            const activeEl = document.getElementById('db-stat-active');
+            if (activeEl) activeEl.textContent = activeCount;
+
+            const progressTextEl = document.getElementById('db-stat-progress-text');
+            if (progressTextEl) progressTextEl.textContent = progressPercent + '%';
+
+            const progressBarEl = document.getElementById('db-stat-progress-bar');
+            if (progressBarEl) progressBarEl.style.width = progressPercent + '%';
+
+            const notesEl = document.getElementById('db-stat-notes');
+            if (notesEl) notesEl.textContent = state.notes.length;
+
+            const hour = new Date().getHours();
+            let greeting = 'morning';
+            if (hour >= 12 && hour < 17) greeting = 'afternoon';
+            else if (hour >= 17) greeting = 'evening';
+            
+            const greetingEl = document.getElementById('greeting-time');
+            if (greetingEl) greetingEl.textContent = greeting;
+
+            // Render Focus Tasks Board (inline Notion-like table layout on Dashboard)
+            const recentTasksContainer = document.getElementById('db-recent-tasks-container');
+            if (recentTasksContainer) {
+                const activeTasks = state.tasks.filter(t => t.status !== 'done');
+                activeTasks.sort((a, b) => {
+                    if (a.dueDate && b.dueDate) return new Date(a.dueDate) - new Date(b.dueDate);
+                    if (a.dueDate) return -1;
+                    if (b.dueDate) return 1;
+                    return (b.id || 0) - (a.id || 0);
+                });
+                const focusTasks = activeTasks.slice(0, 5);
+
+                if (focusTasks.length === 0) {
+                    recentTasksContainer.innerHTML = '<p class="text-sm text-gray-400 italic py-4 text-center">No active focus tasks! Create one in the Tasks tab.</p>';
+                } else {
+                    let tableHtml = `
+                    <div class="overflow-x-auto border border-gray-100 rounded-xl bg-white shadow-sm mt-2">
+                        <table class="min-w-full divide-y divide-gray-100 text-left text-xs table-fixed">
+                            <thead class="bg-gray-50/75 text-gray-400 text-[10px] font-bold uppercase tracking-wider border-b border-gray-100">
+                                <tr>
+                                    <th scope="col" class="py-2.5 px-3 font-semibold w-1/2">Task</th>
+                                    <th scope="col" class="py-2.5 px-3 font-semibold w-28">Status</th>
+                                    <th scope="col" class="py-2.5 px-3 font-semibold w-28">Due</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 bg-white">
+                    `;
+
+                    tableHtml += focusTasks.map(task => {
+                        let dueDateText = '<span class="text-gray-300">—</span>';
+                        if (task.dueDate) {
+                            const due = new Date(task.dueDate);
+                            const today = new Date();
+                            today.setHours(0,0,0,0);
+                            due.setHours(0,0,0,0);
+                            
+                            const isOverdue = due < today;
+                            const textClass = isOverdue ? 'text-red-500 font-bold' : 'text-gray-400';
+                            dueDateText = `<span class="${textClass} flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3 flex-shrink-0"></i>${due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>`;
+                        }
+
+                        return `
+                                <tr class="hover:bg-gray-50/50 transition-colors duration-150">
+                                    <td class="py-2.5 px-3 font-semibold text-gray-700 truncate">${escapeHtml(task.text)}</td>
+                                    <td class="py-2.5 px-3 whitespace-nowrap">${getStatusDropdown(task)}</td>
+                                    <td class="py-2.5 px-3 whitespace-nowrap">${dueDateText}</td>
+                                </tr>
+                        `;
+                    }).join('');
+
+                    tableHtml += `
+                            </tbody>
+                        </table>
+                    </div>
+                    `;
+                    recentTasksContainer.innerHTML = tableHtml;
+                }
+            }
+
+            // Render integrated Dashboard Brain Dump list
+            const recentThoughtsEl = document.getElementById('db-braindump-list');
+            if (recentThoughtsEl) {
+                if (state.brainDumps.length === 0) {
+                    recentThoughtsEl.innerHTML = `
+                        <div class="text-center py-12 empty-state">
+                            <i data-lucide="sparkles" class="w-10 h-10 mx-auto text-gray-300 mb-2"></i>
+                            <p class="text-gray-400 text-xs italic">Capture fleeting thoughts here instantly...</p>
+                        </div>
+                    `;
+                } else {
+                    recentThoughtsEl.innerHTML = state.brainDumps.slice().reverse().map(thought => {
+                        return `
+                            <div class="group relative p-3.5 rounded-xl bg-white border border-gray-150/70 hover:shadow-md hover:border-indigo-100 transition-all duration-200 flex items-start gap-3">
+                                <div class="w-7 h-7 rounded-lg gradient-bg-subtle flex items-center justify-center flex-shrink-0 text-indigo-500 mt-0.5">
+                                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                                </div>
+                                <div class="flex-1 min-w-0 pr-20">
+                                    <p class="text-sm font-medium text-gray-800 break-words leading-relaxed">${escapeHtml(thought.text)}</p>
+                                    <p class="text-[10px] text-gray-400 mt-1 flex items-center gap-1 font-medium"><i data-lucide="clock" class="w-3 h-3"></i>${formatDate(thought.date)}</p>
+                                </div>
+                                <!-- Hover Actions Panel -->
+                                <div class="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-white pl-2 shadow-[-8px_0_8px_-4px_rgba(255,255,255,0.9)] opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-10">
+                                    <button onclick="convertBrainDumpToTask(${thought.id})" class="w-7 h-7 rounded-lg bg-indigo-50 hover:bg-indigo-100 flex items-center justify-center text-indigo-600 transition-colors" title="Convert to Task">
+                                        <i data-lucide="check-square" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                    <button onclick="convertBrainDumpToNote(${thought.id})" class="w-7 h-7 rounded-lg bg-pink-50 hover:bg-pink-100 flex items-center justify-center text-pink-600 transition-colors" title="Convert to Note">
+                                        <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                    <button onclick="deleteBrainDump(${thought.id})" class="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors" title="Move to Recycle Bin">
+                                        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+
+            // Urgent Shopping alert
+            const urgentShopping = state.shoppingList.filter(item => item.priority === 'urgent' && item.status !== 'delivered');
+            const urgentShoppingWidget = document.getElementById('urgent-shopping-widget');
+            const urgentShoppingList = document.getElementById('urgent-shopping-list');
+            
+            if (urgentShoppingWidget && urgentShoppingList) {
+                if (urgentShopping.length > 0) {
+                    urgentShoppingWidget.classList.remove('hidden');
+                    urgentShoppingList.innerHTML = urgentShopping.map(item => {
+                        return '<div class="glass-card rounded-xl p-3 flex items-center gap-3 border border-red-100">' +
+                            '<i data-lucide="alert-circle" class="w-4 h-4 text-red-500"></i>' +
+                            '<span class="text-sm text-gray-800 flex-1">' + escapeHtml(item.text) + '</span>' +
+                            '<button onclick="toggleShoppingItem(' + item.id + ')" class="btn-primary px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500 hover:bg-red-600 text-white border-0">Got it</button>' +
+                            '</div>';
+                    }).join('');
+                } else {
+                    urgentShoppingWidget.classList.add('hidden');
+                }
+            }
+            
+            lucide.createIcons();
+        }
+
+        function toggleNewTaskNotes() {
+            const notesInput = document.getElementById('task-notes-input');
+            notesInput.classList.toggle('hidden');
+            if (!notesInput.classList.contains('hidden')) {
+                notesInput.focus();
+            }
+        }
+
+        function addTask() {
+            const input = document.getElementById('task-input');
+            const notesInput = document.getElementById('task-notes-input');
+            const projectSelect = document.getElementById('task-project');
+            const projectId = projectSelect && projectSelect.value ? projectSelect.value : null;
+            const text = input.value.trim();
+            const notes = notesInput.value.trim();
+            
+            const dueDateInput = document.getElementById('task-due-date');
+            const dueDate = dueDateInput && dueDateInput.value ? dueDateInput.value : null;
+            
+            if (!text) return;
+            
+            pushHistory();
+            state.tasks.push({
+                id: Date.now(),
+                text: text,
+                notes: notes,
+                projectId: projectId ? parseInt(projectId) : null,
+                status: 'todo',
+                date: new Date().toISOString(),
+                dueDate: dueDate
+            });
+            
+            input.value = '';
+            notesInput.value = '';
+            notesInput.classList.add('hidden');
+            if (dueDateInput) dueDateInput.value = '';
+            
+            saveState();
+            renderTasks();
+            updateDashboard();
+        }
+
+        function switchTaskTab(tab) {
+            state.currentTaskTab = tab;
+            document.querySelectorAll('[data-tab]').forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.add('text-gray-500');
+            });
+            const activeBtn = document.querySelector('[data-tab="' + tab + '"]');
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+                activeBtn.classList.remove('text-gray-500');
+            }
+            renderTasks();
+        }
+
+        function renderTasks() {
+            const filtered = state.tasks.filter(t => t.status !== 'done');
+
+            // Sort tasks chronologically by due date (earliest first, no due date at the bottom)
+            filtered.sort((a, b) => {
+                if (a.dueDate && b.dueDate) return new Date(a.dueDate) - new Date(b.dueDate);
+                if (a.dueDate) return -1;
+                if (b.dueDate) return 1;
+                return (a.id || 0) - (b.id || 0);
+            });
+
+            const listEl = document.getElementById('task-list');
+            
+            let tableHtml = `
+            <div class="overflow-x-auto border border-gray-100 rounded-xl bg-white shadow-sm">
+                <table class="min-w-full divide-y divide-gray-100 text-left text-sm table-fixed md:table-auto">
+                    <thead class="bg-gray-50/75 text-gray-400 text-[11px] font-bold uppercase tracking-wider border-b border-gray-100">
+                        <tr>
+                            <th scope="col" class="py-3 px-4 font-semibold w-1/2 md:w-auto">
+                                <div class="flex items-center gap-1.5"><i data-lucide="type" class="w-3.5 h-3.5"></i> Task</div>
+                            </th>
+                            <th scope="col" class="py-3 px-4 font-semibold w-32 md:w-auto">
+                                <div class="flex items-center gap-1.5"><i data-lucide="circle-dot" class="w-3.5 h-3.5"></i> Status</div>
+                            </th>
+                            <th scope="col" class="py-3 px-4 font-semibold w-32 md:w-auto">
+                                <div class="flex items-center gap-1.5"><i data-lucide="folder" class="w-3.5 h-3.5"></i> Project</div>
+                            </th>
+                            <th scope="col" class="py-3 px-4 font-semibold w-36 md:w-auto">
+                                <div class="flex items-center gap-1.5"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> Due</div>
+                            </th>
+                            <th scope="col" class="py-3 px-4 font-semibold text-right pr-6 w-36 md:w-auto">
+                                <div class="flex items-center gap-1.5 justify-end"><i data-lucide="align-left" class="w-3.5 h-3.5"></i> Notes / Actions</div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 bg-white">
+            `;
+
+            if (filtered.length > 0) {
+                tableHtml += filtered.map(task => {
+                    const checked = task.status === 'done' ? 'checked' : '';
+                    const hasNotes = task.notes && task.notes.trim() !== '';
+                    const notesIconColor = hasNotes ? 'text-indigo-500' : 'text-gray-400';
+                    
+                    return `
+                            <tr class="group hover:bg-gray-50/50 transition-colors duration-150">
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center gap-2.5 min-w-0 w-full">
+                                        <input type="checkbox" class="checkbox-custom flex-shrink-0" ${checked} onchange="toggleTask(${task.id})">
+                                        <i data-lucide="file" class="w-4 h-4 text-gray-400 flex-shrink-0"></i>
+                                        <div class="flex-grow flex items-center gap-2 min-w-0">
+                                            <input id="task-text-input-${task.id}" type="text" class="bg-transparent border-none text-gray-700 font-semibold text-sm w-full focus:bg-white focus:ring-1 focus:ring-indigo-100 rounded px-1.5 py-0.5 transition-colors focus:border-gray-200 ${task.status === 'done' ? 'line-through opacity-50' : ''}" value="${escapeHtml(task.text)}" placeholder="Type a task name..." onblur="updateTaskText(${task.id}, this.value)" onkeydown="if(event.key === 'Enter') { this.blur(); }">
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    ${getStatusDropdown(task)}
+                                </td>
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    ${getProjectDropdown(task)}
+                                </td>
+                                <td class="py-3 px-4 whitespace-nowrap text-gray-500 text-xs">
+                                    <input type="date" class="bg-transparent border-none text-gray-500 hover:text-gray-800 focus:text-gray-800 text-xs p-0.5 rounded cursor-pointer focus:ring-1 focus:ring-indigo-100 transition-colors" value="${task.dueDate || ''}" onchange="updateTaskDueDate(${task.id}, this.value)">
+                                </td>
+                                <td class="py-3 px-4 whitespace-nowrap text-right pr-6">
+                                    <div class="flex items-center gap-2 justify-end opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                                        <button onclick="toggleTaskNotes(${task.id})" class="w-7 h-7 rounded-lg bg-gray-50 hover:bg-gray-100 flex items-center justify-center transition-colors text-gray-500" title="Toggle Notes">
+                                            <i data-lucide="align-left" class="w-3.5 h-3.5 ${notesIconColor}"></i>
+                                        </button>
+                                        <button onclick="deleteTask(${task.id})" class="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors" title="Delete">
+                                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr id="task-notes-row-${task.id}" class="hidden bg-gray-50/30">
+                                <td colspan="5" class="py-3.5 px-8 border-t border-b border-gray-100">
+                                    <div class="flex flex-col md:flex-row gap-4">
+                                        <div class="flex-1 flex flex-col gap-2">
+                                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1"><i data-lucide="align-left" class="w-3 h-3"></i> Notes & Details</span>
+                                            <textarea id="task-notes-${task.id}" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all resize-y h-24" placeholder="Add notes here..." onblur="saveTaskNotes(${task.id})">${task.notes ? escapeHtml(task.notes) : ''}</textarea>
+                                        </div>
+                                        <div class="w-full md:w-64 flex flex-col gap-2">
+                                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1"><i data-lucide="folder" class="w-3 h-3"></i> Linked Project</span>
+                                            <select class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer" onchange="updateTaskProject(${task.id}, this.value)">
+                                                <option value="">No Project</option>
+                                                ${state.projects.map(p => `<option value="${p.id}" ${task.projectId === p.id ? 'selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                    `;
+                }).join('');
+            } else {
+                tableHtml += `
+                    <tr>
+                        <td colspan="4" class="py-8 text-center text-gray-400 text-sm italic">
+                            No tasks created yet. Click "+ New Task" below to start!
+                        </td>
+                    </tr>
+                `;
+            }
+
+            tableHtml += `
+                        <tr class="hover:bg-gray-50/50 cursor-pointer transition-colors duration-150" onclick="addNewInlineTask()">
+                            <td colspan="4" class="py-3 px-4 text-gray-400 text-sm font-medium">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="plus" class="w-4 h-4 text-gray-400"></i>
+                                    <span>New Task</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            `;
+
+            listEl.innerHTML = tableHtml;
+            lucide.createIcons();
+        }
+
+        function updateTaskDueDate(id, newDate) {
+            const task = state.tasks.find(t => t.id === id);
+            if (task) {
+                const normalizedDate = newDate ? newDate : null;
+                if (task.dueDate !== normalizedDate) {
+                    pushHistory();
+                    task.dueDate = normalizedDate;
+                    saveState();
+                    renderTasks();
+                    if (state.currentProjectId) {
+                        renderProjectTasks();
+                    }
+                    updateDashboard();
+                }
+            }
+        }
+
+        function addNewInlineTask() {
+            pushHistory();
+            const newId = Date.now();
+            state.tasks.push({
+                id: newId,
+                text: '',
+                notes: '',
+                projectId: state.currentProjectId || null,
+                status: 'todo',
+                date: new Date().toISOString(),
+                dueDate: null
+            });
+            saveState();
+            renderTasks();
+            if (state.currentProjectId) {
+                renderProjectTasks();
+            }
+            updateDashboard();
+            
+            setTimeout(() => {
+                const el = document.getElementById(`task-text-input-${newId}`);
+                if (el) {
+                    el.focus();
+                }
+            }, 80);
+        }
+
+        function updateTaskText(id, newText) {
+            const task = state.tasks.find(t => t.id === id);
+            if (task) {
+                const trimmed = newText.trim();
+                if (!trimmed) {
+                    if (confirm("Delete this empty task?")) {
+                        deleteTask(id);
+                    } else {
+                        renderTasks();
+                        if (state.currentProjectId) {
+                            renderProjectTasks();
+                        }
+                    }
+                    return;
+                }
+                if (task.text !== trimmed) {
+                    pushHistory();
+                    task.text = trimmed;
+                    saveState();
+                    updateDashboard();
+                }
+            }
+        }
+
+        function updateTaskProject(id, projectIdStr) {
+            const task = state.tasks.find(t => t.id === id);
+            if (task) {
+                const newProjId = projectIdStr ? parseInt(projectIdStr) : null;
+                if (task.projectId !== newProjId) {
+                    pushHistory();
+                    task.projectId = newProjId;
+                    saveState();
+                    renderTasks();
+                    if (state.currentProjectId) {
+                        renderProjectTasks();
+                    }
+                    updateDashboard();
+                }
+            }
+        }
+
+        function toggleTask(id) {
+            const task = state.tasks.find(t => t.id === id);
+            if (task) {
+                pushHistory();
+                task.status = task.status === 'done' ? 'todo' : 'done';
+                saveState();
+                renderTasks();
+                renderArchiveTasks();
+                if (state.currentProjectId) {
+                    renderProjectTasks();
+                }
+                updateDashboard();
+            }
+        }
+
+        function moveTask(id) {
+            const task = state.tasks.find(t => t.id === id);
+            if (task) {
+                pushHistory();
+                if (task.status === 'todo') task.status = 'inprogress';
+                else if (task.status === 'inprogress') task.status = 'done';
+                else task.status = 'todo';
+                saveState();
+                renderTasks();
+                renderArchiveTasks();
+                if (state.currentProjectId) {
+                    renderProjectTasks();
+                }
+                updateDashboard();
+            }
+        }
+
+        function deleteTask(id) {
+            const task = state.tasks.find(t => t.id === id);
+            if (task) {
+                pushHistory();
+                state.trash.unshift({
+                    id: Date.now(),
+                    type: task.projectId ? 'projectTask' : 'task',
+                    item: task,
+                    deletedDate: new Date().toISOString()
+                });
+                state.tasks = state.tasks.filter(t => t.id !== id);
+                saveState();
+                renderTasks();
+                renderArchiveTasks();
+                if (state.currentProjectId) {
+                    renderProjectTasks();
+                }
+                updateDashboard();
+            }
+        }
+
+        function toggleDoneTasksArchive() {
+            renderArchiveTasks();
+            const modal = document.getElementById('archive-modal');
+            const modalBox = modal.querySelector('.glass-card');
+            modal.classList.remove('pointer-events-none', 'opacity-0');
+            modal.classList.add('opacity-100');
+            modalBox.classList.remove('scale-95');
+            modalBox.classList.add('scale-100');
+            lucide.createIcons();
+        }
+
+        function closeArchiveModal() {
+            const modal = document.getElementById('archive-modal');
+            const modalBox = modal.querySelector('.glass-card');
+            modal.classList.add('pointer-events-none', 'opacity-0');
+            modal.classList.remove('opacity-100');
+            modalBox.classList.add('scale-95');
+            modalBox.classList.remove('scale-100');
+        }
+
+        function renderArchiveTasks() {
+            const completed = state.tasks.filter(t => t.status === 'done');
+            completed.sort((a, b) => (b.id || 0) - (a.id || 0));
+            const container = document.getElementById('archive-table-container');
+            if (!container) return;
+
+            if (completed.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state text-center py-12">
+                        <i data-lucide="archive" class="w-12 h-12 mx-auto text-gray-300 mb-3"></i>
+                        <p class="text-gray-400 text-sm">Your completed archive is empty</p>
+                    </div>
+                `;
+            } else {
+                let tableHtml = `
+                <div class="overflow-x-auto border border-gray-100 rounded-xl bg-white shadow-sm">
+                    <table class="min-w-full divide-y divide-gray-100 text-left text-sm table-fixed md:table-auto">
+                        <thead class="bg-gray-50/75 text-gray-400 text-[11px] font-bold uppercase tracking-wider border-b border-gray-100">
+                            <tr>
+                                <th scope="col" class="py-3 px-4 font-semibold w-1/2 md:w-auto">
+                                    <div class="flex items-center gap-1.5"><i data-lucide="type" class="w-3.5 h-3.5"></i> Task</div>
+                                </th>
+                                <th scope="col" class="py-3 px-4 font-semibold w-32 md:w-auto">
+                                    <div class="flex items-center gap-1.5"><i data-lucide="circle-dot" class="w-3.5 h-3.5"></i> Status</div>
+                                </th>
+                                <th scope="col" class="py-3 px-4 font-semibold w-32 md:w-auto">
+                                    <div class="flex items-center gap-1.5"><i data-lucide="folder" class="w-3.5 h-3.5"></i> Project</div>
+                                </th>
+                                <th scope="col" class="py-3 px-4 font-semibold w-36 md:w-auto">
+                                    <div class="flex items-center gap-1.5"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> Due</div>
+                                </th>
+                                <th scope="col" class="py-3 px-4 font-semibold text-right pr-6 w-32 md:w-auto">
+                                    <div class="flex items-center gap-1.5 justify-end"><i data-lucide="align-left" class="w-3.5 h-3.5"></i> Actions</div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 bg-white">
+                `;
+
+                tableHtml += completed.map(task => {
+                    const hasNotes = task.notes && task.notes.trim() !== '';
+                    const notesIconColor = hasNotes ? 'text-indigo-500' : 'text-gray-400';
+                    return `
+                            <tr class="group hover:bg-gray-50/50 transition-colors duration-150">
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center gap-2.5 min-w-0">
+                                        <input type="checkbox" class="checkbox-custom flex-shrink-0" checked onchange="toggleTask(${task.id})">
+                                        <i data-lucide="file" class="w-4 h-4 text-gray-400 flex-shrink-0"></i>
+                                        <span class="task-text text-sm text-gray-500 truncate font-semibold line-through opacity-60" title="${escapeHtml(task.text)}">
+                                            ${escapeHtml(task.text)}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    ${getStatusDropdown(task)}
+                                </td>
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    ${getProjectDropdown(task)}
+                                </td>
+                                <td class="py-3 px-4 whitespace-nowrap text-gray-400 text-xs">
+                                    ${formatDueDate(task.dueDate)}
+                                </td>
+                                <td class="py-3 px-4 whitespace-nowrap text-right pr-6">
+                                    <div class="flex items-center gap-2 justify-end opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                                        <button onclick="toggleTaskNotes(${task.id})" class="w-7 h-7 rounded-lg bg-gray-50 hover:bg-gray-100 flex items-center justify-center transition-colors text-gray-500" title="Toggle Notes">
+                                            <i data-lucide="align-left" class="w-3.5 h-3.5 ${notesIconColor}"></i>
+                                        </button>
+                                        <button onclick="deleteTask(${task.id})" class="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors" title="Delete">
+                                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr id="task-notes-row-${task.id}" class="hidden bg-gray-50/30">
+                                <td colspan="5" class="py-3.5 px-8 border-t border-b border-gray-100">
+                                    <div class="flex flex-col gap-2">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1"><i data-lucide="align-left" class="w-3.5 h-3.5"></i> Notes & Details</span>
+                                        </div>
+                                        <textarea id="task-notes-${task.id}" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all resize-y h-24" placeholder="Add notes here..." onblur="saveTaskNotes(${task.id})">${task.notes ? escapeHtml(task.notes) : ''}</textarea>
+                                    </div>
+                                </td>
+                            </tr>
+                    `;
+                }).join('');
+
+                tableHtml += `
+                        </tbody>
+                    </table>
+                </div>
+                `;
+                container.innerHTML = tableHtml;
+            }
+            lucide.createIcons();
+        }
+
+        function toggleTaskNotes(id) {
+            const container = document.getElementById('task-notes-row-' + id);
+            if (container) {
+                container.classList.toggle('hidden');
+                if (!container.classList.contains('hidden')) {
+                    const textarea = document.getElementById('task-notes-' + id);
+                    if (textarea) textarea.focus();
+                }
+            }
+        }
+
+        function saveTaskNotes(id) {
+            const task = state.tasks.find(t => t.id === id);
+            if (task) {
+                const notes = document.getElementById('task-notes-' + id).value.trim();
+                if (task.notes !== notes) {
+                    pushHistory();
+                    task.notes = notes;
+                    saveState();
+                }
+                
+                const btnSvg = document.querySelector('button[onclick="toggleTaskNotes(' + id + ')"] svg');
+                if (btnSvg) {
+                    if (notes) {
+                        btnSvg.classList.remove('text-gray-400');
+                        btnSvg.classList.add('text-indigo-500');
+                    } else {
+                        btnSvg.classList.remove('text-indigo-500');
+                        btnSvg.classList.add('text-gray-400');
+                    }
+                }
+            }
+        }
+
+
+
+        function addShoppingItem() {
+            const input = document.getElementById('shopping-input');
+            const priority = document.getElementById('shopping-priority').value;
+            const text = input.value.trim();
+            
+            if (!text) return;
+            
+            pushHistory();
+            state.shoppingList.push({
+                id: Date.now(),
+                text: text,
+                priority: priority,
+                status: 'todo',
+                notes: '',
+                date: new Date().toISOString()
+            });
+            
+            input.value = '';
+            saveState();
+            renderShoppingList();
+            updateDashboard();
+        }
+
+        function getShoppingStatusDropdown(item) {
+            let selectClass = 'px-2.5 py-0.5 rounded-full text-xs font-semibold border cursor-pointer focus:ring-1 focus:ring-indigo-100 transition-all appearance-none text-center ';
+            if (item.status === 'todo') selectClass += 'bg-amber-50 text-amber-800 border-amber-200';
+            else if (item.status === 'ordered') selectClass += 'bg-blue-50 text-blue-800 border-blue-200';
+            else if (item.status === 'delivered') selectClass += 'bg-gray-100 text-gray-600 border-gray-300';
+            else selectClass += 'bg-gray-50 text-gray-500 border-gray-200';
+            
+            return `
+                <select class="${selectClass}" onchange="updateShoppingStatus(${item.id}, this.value)">
+                    <option value="todo" ${item.status === 'todo' ? 'selected' : ''}>To Buy</option>
+                    <option value="ordered" ${item.status === 'ordered' ? 'selected' : ''}>Ordered</option>
+                    <option value="delivered" ${item.status === 'delivered' ? 'selected' : ''}>Delivered</option>
+                </select>
+            `;
+        }
+
+        function updateShoppingStatus(id, newStatus) {
+            const item = state.shoppingList.find(i => i.id === id);
+            if (item) {
+                if (item.status !== newStatus) {
+                    pushHistory();
+                    item.status = newStatus;
+                    saveState();
+                    renderShoppingList();
+                    updateDashboard();
+                }
+            }
+        }
+
+        function addNewInlineShoppingItem() {
+            pushHistory();
+            const newId = Date.now();
+            state.shoppingList.push({
+                id: newId,
+                text: '',
+                priority: 'need',
+                status: 'todo',
+                notes: '',
+                date: new Date().toISOString()
+            });
+            saveState();
+            renderShoppingList();
+            updateDashboard();
+            
+            setTimeout(() => {
+                const el = document.getElementById(`shopping-text-input-${newId}`);
+                if (el) {
+                    el.focus();
+                }
+            }, 80);
+        }
+
+        function updateShoppingText(id, newText) {
+            const item = state.shoppingList.find(i => i.id === id);
+            if (item) {
+                const trimmed = newText.trim();
+                if (!trimmed) {
+                    if (confirm("Delete this empty item?")) {
+                        deleteShoppingItem(id);
+                    } else {
+                        renderShoppingList();
+                    }
+                    return;
+                }
+                if (item.text !== trimmed) {
+                    pushHistory();
+                    item.text = trimmed;
+                    saveState();
+                    updateDashboard();
+                }
+            }
+        }
+
+        function renderShoppingList() {
+            const listEl = document.getElementById('shopping-list');
+            if (!listEl) return;
+            if (state.shoppingList.length === 0) {
+                listEl.innerHTML = '<div class="empty-state text-center py-12"><i data-lucide="shopping-bag" class="w-12 h-12 mx-auto text-gray-300 mb-3"></i><p class="text-gray-400 text-sm">Your shopping list is empty</p></div>';
+            } else {
+                const sortedList = [...state.shoppingList].sort((a, b) => {
+                    if (a.status === 'delivered' && b.status !== 'delivered') return 1;
+                    if (a.status !== 'delivered' && b.status === 'delivered') return -1;
+                    const priorityScore = { urgent: 3, need: 2, want: 1 };
+                    return priorityScore[b.priority] - priorityScore[a.priority];
+                });
+
+                let tableHtml = `
+                <div class="overflow-x-auto border border-gray-100 rounded-xl bg-white shadow-sm">
+                    <table class="min-w-full divide-y divide-gray-100 text-left text-sm table-fixed md:table-auto">
+                        <thead class="bg-gray-50/75 text-gray-400 text-[11px] font-bold uppercase tracking-wider border-b border-gray-100">
+                            <tr>
+                                <th scope="col" class="py-3 px-4 font-semibold w-1/2 md:w-auto">
+                                    <div class="flex items-center gap-1.5"><i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> Item</div>
+                                </th>
+                                <th scope="col" class="py-3 px-4 font-semibold w-32 md:w-auto">
+                                    <div class="flex items-center gap-1.5"><i data-lucide="circle-dot" class="w-3.5 h-3.5"></i> Status</div>
+                                </th>
+                                <th scope="col" class="py-3 px-4 font-semibold w-32 md:w-auto">
+                                    <div class="flex items-center gap-1.5"><i data-lucide="tag" class="w-3.5 h-3.5"></i> Priority</div>
+                                </th>
+                                <th scope="col" class="py-3 px-4 font-semibold text-right pr-6 w-32 md:w-auto">
+                                    <div class="flex items-center gap-1.5 justify-end"><i data-lucide="align-left" class="w-3.5 h-3.5"></i> Actions</div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 bg-white">
+                `;
+
+                tableHtml += sortedList.map(item => {
+                    const checked = item.status === 'delivered' ? 'checked' : '';
+                    const priorityLabel = item.priority.charAt(0).toUpperCase() + item.priority.slice(1);
+                    const isDelivered = item.status === 'delivered';
+                    const textClass = isDelivered ? 'line-through opacity-50 font-semibold' : 'font-semibold text-gray-700';
+                    const hasNotes = item.notes && item.notes.trim() !== '';
+                    const notesIconColor = hasNotes ? 'text-indigo-500 font-bold' : 'text-gray-400';
+
+                    return `
+                            <tr class="group hover:bg-gray-50/50 transition-colors duration-150">
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center gap-2.5 min-w-0 w-full">
+                                        <input type="checkbox" class="checkbox-custom flex-shrink-0" ${checked} onchange="toggleShoppingItem(${item.id})">
+                                        <div class="flex-grow flex items-center gap-2 min-w-0">
+                                            <input id="shopping-text-input-${item.id}" type="text" class="bg-transparent border-none w-full focus:bg-white focus:ring-1 focus:ring-indigo-100 rounded px-1.5 py-0.5 transition-colors focus:border-gray-200 ${textClass}" value="${escapeHtml(item.text)}" placeholder="Type an item name..." onblur="updateShoppingText(${item.id}, this.value)" onkeydown="if(event.key === 'Enter') { this.blur(); }">
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    ${getShoppingStatusDropdown(item)}
+                                </td>
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    <span class="priority-${item.priority} text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0">${priorityLabel}</span>
+                                </td>
+                                <td class="py-3 px-4 whitespace-nowrap text-right pr-6">
+                                    <div class="flex items-center gap-2 justify-end opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                                        <button onclick="toggleShoppingNotes(${item.id})" class="w-7 h-7 rounded-lg bg-gray-50 hover:bg-gray-100 flex items-center justify-center transition-colors text-gray-500" title="Toggle Notes">
+                                            <i data-lucide="align-left" class="w-3.5 h-3.5 ${notesIconColor}"></i>
+                                        </button>
+                                        <button onclick="deleteShoppingItem(${item.id})" class="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors" title="Delete">
+                                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr id="shopping-notes-row-${item.id}" class="hidden bg-gray-50/30">
+                                <td colspan="4" class="py-3.5 px-8 border-t border-b border-gray-100">
+                                    <div class="flex flex-col gap-2">
+                                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1"><i data-lucide="align-left" class="w-3 h-3"></i> Notes & Details</span>
+                                        <textarea id="shopping-notes-${item.id}" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all resize-y h-24" placeholder="Add notes here..." onblur="saveShoppingNotes(${item.id})">${item.notes ? escapeHtml(item.notes) : ''}</textarea>
+                                    </div>
+                                </td>
+                            </tr>
+                    `;
+                }).join('');
+
+                tableHtml += `
+                        <tr class="hover:bg-gray-50/50 cursor-pointer transition-colors duration-150" onclick="addNewInlineShoppingItem()">
+                            <td colspan="4" class="py-3 px-4 text-gray-400 text-sm font-medium">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="plus" class="w-4 h-4 text-gray-400"></i>
+                                    <span>New Item</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            `;
+
+                listEl.innerHTML = tableHtml;
+            }
+            lucide.createIcons();
+        }
+
+        function toggleShoppingNotes(id) {
+            const container = document.getElementById('shopping-notes-row-' + id);
+            if (container) {
+                container.classList.toggle('hidden');
+                if (!container.classList.contains('hidden')) {
+                    const textarea = document.getElementById('shopping-notes-' + id);
+                    if (textarea) textarea.focus();
+                }
+            }
+        }
+
+        function saveShoppingNotes(id) {
+            const item = state.shoppingList.find(i => i.id === id);
+            if (item) {
+                const notes = document.getElementById('shopping-notes-' + id).value.trim();
+                if (item.notes !== notes) {
+                    pushHistory();
+                    item.notes = notes;
+                    saveState();
+                }
+                
+                const btnSvg = document.querySelector('button[onclick="toggleShoppingNotes(' + id + ')"] svg');
+                if (btnSvg) {
+                    if (notes) {
+                        btnSvg.classList.remove('text-gray-400');
+                        btnSvg.classList.add('text-indigo-500');
+                    } else {
+                        btnSvg.classList.remove('text-indigo-500');
+                        btnSvg.classList.add('text-gray-400');
+                    }
+                }
+            }
+        }
+
+        function toggleShoppingItem(id) {
+            const item = state.shoppingList.find(i => i.id === id);
+            if (item) {
+                pushHistory();
+                item.status = item.status === 'delivered' ? 'todo' : 'delivered';
+                saveState();
+                renderShoppingList();
+                updateDashboard();
+            }
+        }
+
+        function deleteShoppingItem(id) {
+            const item = state.shoppingList.find(i => i.id === id);
+            if (item) {
+                pushHistory();
+                state.trash.unshift({
+                    id: Date.now(),
+                    type: 'shopping',
+                    item: item,
+                    deletedDate: new Date().toISOString()
+                });
+                state.shoppingList = state.shoppingList.filter(i => i.id !== id);
+                saveState();
+                renderShoppingList();
+                updateDashboard();
+            }
+        }
+
+        function addProject() {
+            const input = document.getElementById('project-input');
+            const descInput = document.getElementById('project-desc-input');
+            const name = input.value.trim();
+            const desc = descInput.value.trim();
+            
+            if (!name) return;
+            
+            pushHistory();
+            state.projects.push({
+                id: Date.now(),
+                name: name,
+                description: desc,
+                status: 'active',
+                date: new Date().toISOString()
+            });
+            
+            input.value = '';
+            descInput.value = '';
+            saveState();
+            renderProjects();
+        }
+
+        function renderProjects() {
+            const gridEl = document.getElementById('project-grid');
+            if (state.projects.length === 0) {
+                gridEl.innerHTML = '<div class="col-span-full empty-state text-center py-12"><i data-lucide="folder" class="w-12 h-12 mx-auto text-gray-300 mb-3"></i><p class="text-gray-400 text-sm">No projects created yet</p></div>';
+            } else {
+                gridEl.innerHTML = state.projects.map(project => {
+                    const projectTasks = state.tasks.filter(t => t.projectId === project.id);
+                    const completedTasks = projectTasks.filter(t => t.status === 'done').length;
+                    const totalTasks = projectTasks.length;
+                    const progress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+                    
+                    return '<div class="glass-card rounded-2xl p-6 cursor-pointer hover:shadow-lg transition-shadow" onclick="viewProjectDetails(' + project.id + ')">' +
+                        '<div class="flex justify-between items-start mb-4">' +
+                            '<div class="w-10 h-10 rounded-xl gradient-bg-subtle flex items-center justify-center text-indigo-500">' +
+                                '<i data-lucide="folder" class="w-5 h-5"></i>' +
+                            '</div>' +
+                            '<div class="flex gap-1">' +
+                                '<button onclick="event.stopPropagation(); editItem(\'project\', ' + project.id + ')" class="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 flex items-center justify-center text-blue-500 transition-colors" title="Edit"><i data-lucide="edit-2" class="w-4 h-4"></i></button>' +
+                                '<button onclick="event.stopPropagation(); deleteProject(' + project.id + ')" class="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors" title="Delete"><i data-lucide="trash-2" class="w-4 h-4"></i></button>' +
+                            '</div>' +
+                        '</div>' +
+                        '<h3 class="font-display font-semibold text-lg text-gray-900 mb-1 truncate">' + escapeHtml(project.name) + '</h3>' +
+                        '<p class="text-sm text-gray-500 mb-4 line-clamp-2 h-10">' + (project.description ? escapeHtml(project.description) : 'No description') + '</p>' +
+                        '</div>';
+                }).join('');
+            }
+            
+            const projectSelector = document.getElementById('task-project');
+            if (projectSelector) {
+                projectSelector.innerHTML = '<option value="">No Project</option>' + state.projects.map(p => 
+                    '<option value="' + p.id + '">' + escapeHtml(p.name) + '</option>'
+                ).join('');
+            }
+            
+            lucide.createIcons();
+        }
+
+        function viewProjectDetails(id) {
+            state.currentProjectId = id;
+            const project = state.projects.find(p => p.id === id);
+            if (!project) return;
+            
+            document.getElementById('projects-list-view').classList.add('hidden');
+            document.getElementById('project-detail-view').classList.remove('hidden');
+            
+            document.getElementById('detail-project-name').textContent = project.name;
+            document.getElementById('detail-project-desc').textContent = project.description || 'No description provided.';
+            
+            const statusBadge = document.getElementById('detail-project-status');
+            if (project.status === 'completed') {
+                statusBadge.className = 'px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-700';
+                statusBadge.textContent = 'Completed';
+            } else {
+                statusBadge.className = 'px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-700';
+                statusBadge.textContent = 'Active';
+            }
+            
+            renderProjectTasks();
+        }
+
+        function closeProjectDetails() {
+            state.currentProjectId = null;
+            document.getElementById('projects-list-view').classList.remove('hidden');
+            document.getElementById('project-detail-view').classList.add('hidden');
+            renderProjects();
+        }
+
+        function deleteProject(id) {
+            const project = state.projects.find(p => p.id === id);
+            if (project) {
+                pushHistory();
+                const linkedTasks = state.tasks.filter(t => t.projectId === id);
+                if (linkedTasks.length > 0) {
+                    if (!confirm(`This project has ${linkedTasks.length} subtasks. Deleting the project will convert them to standalone tasks. Continue?`)) {
+                        return;
+                    }
+                    linkedTasks.forEach(t => t.projectId = null);
+                }
+                
+                state.trash.unshift({
+                    id: Date.now(),
+                    type: 'project',
+                    item: project,
+                    deletedDate: new Date().toISOString()
+                });
+                
+                state.projects = state.projects.filter(p => p.id !== id);
+                if (state.currentProjectId === id) closeProjectDetails();
+                saveState();
+                renderProjects();
+                updateDashboard();
+            }
+        }
+
+        function addProjectTask() {
+            const input = document.getElementById('project-task-input');
+            const text = input.value.trim();
+            
+            const dueDateInput = document.getElementById('project-task-due-date');
+            const dueDate = dueDateInput && dueDateInput.value ? dueDateInput.value : null;
+            
+            if (!text || !state.currentProjectId) return;
+            
+            pushHistory();
+            state.tasks.push({
+                id: Date.now(),
+                text: text,
+                notes: '',
+                projectId: state.currentProjectId,
+                status: 'todo',
+                date: new Date().toISOString(),
+                dueDate: dueDate
+            });
+            
+            input.value = '';
+            if (dueDateInput) dueDateInput.value = '';
+            
+            saveState();
+            renderProjectTasks();
+        }
+
+        function renderProjectTasks() {
+            if (!state.currentProjectId) return;
+            
+            const projectTasks = state.tasks.filter(t => t.projectId === state.currentProjectId);
+            
+            // Sort tasks chronologically by due date (earliest first, no due date at the bottom)
+            projectTasks.sort((a, b) => {
+                if (a.dueDate && b.dueDate) return new Date(a.dueDate) - new Date(b.dueDate);
+                if (a.dueDate) return -1;
+                if (b.dueDate) return 1;
+                return (a.id || 0) - (b.id || 0);
+            });
+
+            const listEl = document.getElementById('project-task-list');
+            
+            const completedTasks = projectTasks.filter(t => t.status === 'done').length;
+            const totalTasks = projectTasks.length;
+            const progress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+            
+            let tableHtml = `
+            <div class="overflow-x-auto border border-gray-100 rounded-xl bg-white shadow-sm">
+                <table class="min-w-full divide-y divide-gray-100 text-left text-sm table-fixed md:table-auto">
+                    <thead class="bg-gray-50/75 text-gray-400 text-[11px] font-bold uppercase tracking-wider border-b border-gray-100">
+                        <tr>
+                            <th scope="col" class="py-3 px-4 font-semibold w-1/2 md:w-auto">
+                                <div class="flex items-center gap-1.5"><i data-lucide="type" class="w-3.5 h-3.5"></i> Task</div>
+                            </th>
+                            <th scope="col" class="py-3 px-4 font-semibold w-32 md:w-auto">
+                                <div class="flex items-center gap-1.5"><i data-lucide="circle-dot" class="w-3.5 h-3.5"></i> Status</div>
+                            </th>
+                            <th scope="col" class="py-3 px-4 font-semibold w-36 md:w-auto">
+                                <div class="flex items-center gap-1.5"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> Due</div>
+                            </th>
+                            <th scope="col" class="py-3 px-4 font-semibold text-right pr-6 w-36 md:w-auto">
+                                <div class="flex items-center gap-1.5 justify-end"><i data-lucide="align-left" class="w-3.5 h-3.5"></i> Notes / Actions</div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 bg-white">
+            `;
+
+            if (projectTasks.length > 0) {
+                tableHtml += projectTasks.map(task => {
+                    const checked = task.status === 'done' ? 'checked' : '';
+                    const hasNotes = task.notes && task.notes.trim() !== '';
+                    const notesIconColor = hasNotes ? 'text-indigo-500' : 'text-gray-400';
+                    
+                    return `
+                            <tr class="group hover:bg-gray-50/50 transition-colors duration-150">
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center gap-2.5 min-w-0">
+                                        <input type="checkbox" class="checkbox-custom flex-shrink-0" ${checked} onchange="toggleProjectTask(${task.id})">
+                                        <i data-lucide="file" class="w-4 h-4 text-gray-400 flex-shrink-0"></i>
+                                        <input id="task-text-input-${task.id}" type="text" class="bg-transparent border-none text-gray-700 font-semibold text-sm w-full focus:bg-white focus:ring-1 focus:ring-indigo-100 rounded px-1.5 py-0.5 transition-colors focus:border-gray-200 ${task.status === 'done' ? 'line-through opacity-50' : ''}" value="${escapeHtml(task.text)}" placeholder="Type a subtask name..." onblur="updateTaskText(${task.id}, this.value)" onkeydown="if(event.key === 'Enter') { this.blur(); }">
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    ${getStatusDropdown(task)}
+                                </td>
+                                <td class="py-3 px-4 whitespace-nowrap text-gray-500 text-xs">
+                                    <input type="date" class="bg-transparent border-none text-gray-500 hover:text-gray-800 focus:text-gray-800 text-xs p-0.5 rounded cursor-pointer focus:ring-1 focus:ring-indigo-100 transition-colors" value="${task.dueDate || ''}" onchange="updateTaskDueDate(${task.id}, this.value)">
+                                </td>
+                                <td class="py-3 px-4 whitespace-nowrap text-right pr-6">
+                                    <div class="flex items-center gap-2 justify-end opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                                        <button onclick="toggleTaskNotes(${task.id})" class="w-7 h-7 rounded-lg bg-gray-50 hover:bg-gray-100 flex items-center justify-center transition-colors text-gray-500" title="Toggle Notes">
+                                            <i data-lucide="align-left" class="w-3.5 h-3.5 ${notesIconColor}"></i>
+                                        </button>
+                                        <button onclick="deleteTask(${task.id}); setTimeout(renderProjectTasks, 50);" class="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors" title="Delete">
+                                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr id="task-notes-row-${task.id}" class="hidden bg-gray-50/30">
+                                <td colspan="4" class="py-3.5 px-8 border-t border-b border-gray-100">
+                                    <div class="flex flex-col gap-2">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1"><i data-lucide="align-left" class="w-3 h-3"></i> Notes & Details</span>
+                                        </div>
+                                        <textarea id="task-notes-${task.id}" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all resize-y h-24" placeholder="Add notes here..." onblur="saveProjectTaskNotes(${task.id})">${task.notes ? escapeHtml(task.notes) : ''}</textarea>
+                                    </div>
+                                </td>
+                            </tr>
+                    `;
+                }).join('');
+            } else {
+                tableHtml += `
+                    <tr>
+                        <td colspan="4" class="py-8 text-center text-gray-400 text-sm italic">
+                            No subtasks created yet. Click "+ New Subtask" below to start!
+                        </td>
+                    </tr>
+                `;
+            }
+
+            tableHtml += `
+                        <tr class="hover:bg-gray-50/50 cursor-pointer transition-colors duration-150" onclick="addNewInlineTask()">
+                            <td colspan="4" class="py-3 px-4 text-gray-400 text-sm font-medium">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="plus" class="w-4 h-4 text-gray-400"></i>
+                                    <span>New Subtask</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            `;
+
+            listEl.innerHTML = tableHtml;
+            lucide.createIcons();
+        }
+
+        function toggleProjectTask(id) {
+            toggleTask(id);
+            renderProjectTasks();
+        }
+
+        function saveProjectTaskNotes(id) {
+            saveTaskNotes(id);
+            // Don't need to re-render, saveTaskNotes handles icon update
+        }
+
+        function addDashboardBrainDump() {
+            const input = document.getElementById('db-braindump-input');
+            const text = input ? input.value.trim() : '';
+            if (!text) return;
+            
+            pushHistory();
+            state.brainDumps.push({
+                id: Date.now(),
+                text: text,
+                date: new Date().toISOString()
+            });
+            
+            if (input) input.value = '';
+            saveState();
+            updateDashboard();
+        }
+
+        function convertBrainDumpToTask(id) {
+            const thought = state.brainDumps.find(t => t.id === id);
+            if (thought) {
+                pushHistory();
+                state.tasks.push({
+                    id: Date.now(),
+                    text: thought.text,
+                    notes: '',
+                    projectId: null,
+                    status: 'todo',
+                    date: new Date().toISOString(),
+                    dueDate: null
+                });
+                state.brainDumps = state.brainDumps.filter(t => t.id !== id);
+                saveState();
+                updateDashboard();
+                if (state.currentPage === 'tasks') {
+                    renderTasks();
+                }
+            }
+        }
+
+        function convertBrainDumpToNote(id) {
+            const thought = state.brainDumps.find(t => t.id === id);
+            if (thought) {
+                pushHistory();
+                const note = {
+                    id: Date.now(),
+                    title: thought.text,
+                    content: '',
+                    tags: ['inbox'],
+                    date: new Date().toISOString()
+                };
+                state.notes.unshift(note);
+                state.currentNoteId = note.id;
+                state.brainDumps = state.brainDumps.filter(t => t.id !== id);
+                saveState();
+                showPage('notes');
+            }
+        }
+
+        function deleteBrainDump(id) {
+            const thought = state.brainDumps.find(t => t.id === id);
+            if (thought) {
+                pushHistory();
+                state.trash.unshift({
+                    id: Date.now(),
+                    type: 'braindump',
+                    item: thought,
+                    deletedDate: new Date().toISOString()
+                });
+                state.brainDumps = state.brainDumps.filter(t => t.id !== id);
+                saveState();
+                updateDashboard();
+            }
+        }
+
+        function createNote() {
+            pushHistory();
+            const note = {
+                id: Date.now(),
+                title: 'Untitled Note',
+                content: '',
+                tags: [],
+                date: new Date().toISOString()
+            };
+            state.notes.unshift(note);
+            state.currentNoteId = note.id;
+            saveState();
+            renderNotes();
+            
+            if (window.innerWidth < 768) {
+                openMobileNoteEditor(note.id);
+            }
+        }
+
+        function triggerNotesSearch() {
+            const searchInput = document.getElementById('note-search');
+            state.noteSearchQuery = searchInput ? searchInput.value.trim().toLowerCase() : '';
+            renderNotes();
+        }
+
+        function filterNotesByTag(tag) {
+            state.noteActiveTagFilter = tag;
+            renderNotes();
+        }
+
+        function renderNotesTagsCloud() {
+            const cloudEl = document.getElementById('notes-tags-cloud');
+            if (!cloudEl) return;
+            
+            const allTags = new Set();
+            state.notes.forEach(note => {
+                const tags = note.tags || [];
+                tags.forEach(tag => {
+                    const clean = tag.trim().toLowerCase();
+                    if (clean) allTags.add(clean);
+                });
+            });
+            
+            const uniqueTags = Array.from(allTags).sort();
+            const activeFilter = state.noteActiveTagFilter || 'All';
+            
+            const allActive = activeFilter === 'All'
+                ? 'bg-indigo-600 text-white border-indigo-600 font-semibold'
+                : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200';
+            
+            let html = `<button onclick="filterNotesByTag('All')" class="px-2 py-0.5 rounded-md text-[10px] border transition-all ${allActive}">All</button>`;
+            
+            uniqueTags.forEach(tag => {
+                const isActive = activeFilter === tag;
+                const activeClasses = isActive
+                    ? 'bg-indigo-600 text-white border-indigo-600 font-semibold'
+                    : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200';
+                html += `<button onclick="filterNotesByTag('${tag}')" class="px-2 py-0.5 rounded-md text-[10px] border transition-all ${activeClasses}">#${escapeHtml(tag)}</button>`;
+            });
+            
+            cloudEl.innerHTML = html;
+        }
+
+        function formatNote(command) {
+            document.execCommand(command, false, null);
+            saveCurrentNote();
+        }
+
+        function renderNotes() {
+            renderNotesTagsCloud();
+
+            const query = state.noteSearchQuery || '';
+            const activeTag = state.noteActiveTagFilter || 'All';
+            
+            const filtered = state.notes.filter(note => {
+                if (activeTag !== 'All') {
+                    const noteTags = note.tags || [];
+                    const hasTag = noteTags.some(t => t.trim().toLowerCase() === activeTag.toLowerCase());
+                    if (!hasTag) return false;
+                }
+                
+                if (query !== '') {
+                    const title = (note.title || '').toLowerCase();
+                    const content = (note.content || '').toLowerCase();
+                    const tagsStr = (note.tags || []).join(' ').toLowerCase();
+                    
+                    if (!title.includes(query) && !content.includes(query) && !tagsStr.includes(query)) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+
+            const listEl = document.getElementById('notes-list');
+            if (filtered.length === 0) {
+                listEl.innerHTML = '<div class="empty-state text-center py-8"><p class="text-gray-400 text-sm">No matching notes</p></div>';
+            } else {
+                listEl.innerHTML = filtered.map(note => {
+                    const activeClass = state.currentNoteId === note.id ? 'active' : '';
+                    const title = note.title || 'Untitled Note';
+                    const cleanContent = (note.content || '').replace(/<[^>]*>/g, '');
+                    const preview = cleanContent.substring(0, 40);
+                    
+                    const noteTags = note.tags || [];
+                    const tagsHtml = noteTags.length > 0 
+                        ? `<div class="flex flex-wrap gap-1 mt-1.5">${noteTags.map(t => `<span class="bg-gray-100 text-gray-500 text-[8px] font-medium px-1.5 py-0.5 rounded border border-gray-200/50">#${escapeHtml(t)}</span>`).join('')}</div>`
+                        : '';
+
+                    return '<div class="note-item ' + activeClass + ' rounded-xl p-3 cursor-pointer" onclick="selectNote(' + note.id + ')">' +
+                        '<div class="flex items-start justify-between">' +
+                        '<p class="text-sm font-medium text-gray-800 truncate flex-1">' + escapeHtml(title) + '</p>' +
+                        '<button onclick="event.stopPropagation(); deleteNote(' + note.id + ')" class="delete-btn w-6 h-6 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors ml-2 flex-shrink-0"><i data-lucide="x" class="w-3 h-3"></i></button>' +
+                        '</div>' +
+                        '<p class="text-xs text-gray-400 mt-1 truncate">' + escapeHtml(preview) + '</p>' +
+                        tagsHtml +
+                        '</div>';
+                }).join('');
+            }
+
+            if (state.currentNoteId) {
+                const note = state.notes.find(n => n.id === state.currentNoteId);
+                if (note) {
+                    document.getElementById('note-editor-empty').classList.add('hidden');
+                    document.getElementById('note-editor-active').classList.remove('hidden');
+                    document.getElementById('note-title').value = note.title;
+                    document.getElementById('note-content').innerHTML = note.content || '';
+                    
+                    const tagsInput = document.getElementById('note-tags');
+                    if (tagsInput) {
+                        tagsInput.value = (note.tags || []).join(', ');
+                    }
+                }
+            } else {
+                const activeEditor = document.getElementById('note-editor-active');
+                const emptyEditor = document.getElementById('note-editor-empty');
+                if (activeEditor && emptyEditor) {
+                    activeEditor.classList.add('hidden');
+                    emptyEditor.classList.remove('hidden');
+                }
+            }
+            lucide.createIcons();
+        }
+
+        function selectNote(id) {
+            state.currentNoteId = id;
+            renderNotes();
+            
+            if (window.innerWidth < 768) {
+                openMobileNoteEditor(id);
+            }
+        }
+
+        function openMobileNoteEditor(id) {
+            state.currentNoteId = id;
+            const note = state.notes.find(n => n.id === id);
+            if (note) {
+                const editor = document.getElementById('mobile-note-editor');
+                editor.classList.remove('hidden');
+                editor.classList.add('flex');
+                document.getElementById('mobile-note-title').value = note.title;
+                document.getElementById('mobile-note-content').innerHTML = note.content || '';
+                
+                const mobileTagsInput = document.getElementById('mobile-note-tags');
+                if (mobileTagsInput) {
+                    mobileTagsInput.value = (note.tags || []).join(', ');
+                }
+            }
+        }
+
+        function closeMobileNoteEditor() {
+            const editor = document.getElementById('mobile-note-editor');
+            editor.classList.add('hidden');
+            editor.classList.remove('flex');
+        }
+
+        function saveCurrentNote() {
+            if (!state.currentNoteId) return;
+            const note = state.notes.find(n => n.id === state.currentNoteId);
+            if (note) {
+                let tagsStr = '';
+                let titleVal = '';
+                let contentVal = '';
+                
+                if (window.innerWidth >= 768) {
+                    titleVal = document.getElementById('note-title').value;
+                    const contentEl = document.getElementById('note-content');
+                    contentVal = contentEl ? contentEl.innerHTML : '';
+                    const tagsInput = document.getElementById('note-tags');
+                    tagsStr = tagsInput ? tagsInput.value : '';
+                } else {
+                    titleVal = document.getElementById('mobile-note-title').value;
+                    const contentEl = document.getElementById('mobile-note-content');
+                    contentVal = contentEl ? contentEl.innerHTML : '';
+                    const tagsInput = document.getElementById('mobile-note-tags');
+                    tagsStr = tagsInput ? tagsInput.value : '';
+                }
+                
+                if (note.title !== titleVal || note.content !== contentVal || (note.tags || []).join(', ') !== tagsStr) {
+                    note.title = titleVal;
+                    note.content = contentVal;
+                    
+                    const newTags = tagsStr.split(',')
+                        .map(t => t.trim())
+                        .filter(t => t.length > 0);
+                    
+                    const tagsChanged = JSON.stringify(note.tags) !== JSON.stringify(newTags);
+                    note.tags = newTags;
+
+                    saveState();
+                    
+                    // In-place updates to keep focus in contenteditable
+                    const activeCard = document.querySelector('.note-item.active');
+                    if (activeCard) {
+                        const titleEl = activeCard.querySelector('p.text-sm');
+                        const previewEl = activeCard.querySelector('p.text-xs');
+                        if (titleEl) titleEl.textContent = note.title || 'Untitled Note';
+                        if (previewEl) {
+                            const cleanContent = (note.content || '').replace(/<[^>]*>/g, '');
+                            previewEl.textContent = cleanContent.substring(0, 40) || 'Empty note';
+                        }
+                        if (tagsChanged) {
+                            renderNotesTagsCloud();
+                            let tagsContainer = activeCard.querySelector('.flex-wrap');
+                            if (!tagsContainer) {
+                                tagsContainer = document.createElement('div');
+                                tagsContainer.className = 'flex flex-wrap gap-1 mt-1.5';
+                                activeCard.appendChild(tagsContainer);
+                            }
+                            tagsContainer.innerHTML = note.tags.map(t => `<span class="bg-gray-100 text-gray-500 text-[8px] font-medium px-1.5 py-0.5 rounded border border-gray-200/50">#${escapeHtml(t)}</span>`).join('');
+                        }
+                    }
+                }
+            }
+        }
+
+        function deleteCurrentNote() {
+            if (!state.currentNoteId) return;
+            deleteNote(state.currentNoteId);
+        }
+
+        function deleteNote(id) {
+            const note = state.notes.find(n => n.id === id);
+            if (note) {
+                pushHistory();
+                state.trash.unshift({
+                    id: Date.now(),
+                    type: 'note',
+                    item: note,
+                    deletedDate: new Date().toISOString()
+                });
+                state.notes = state.notes.filter(n => n.id !== id);
+                if (state.currentNoteId === id) {
+                    state.currentNoteId = state.notes.length > 0 ? state.notes[0].id : null;
+                }
+                saveState();
+                renderNotes();
+            }
+        }
+
+        function renderTrash() {
+            const listEl = document.getElementById('trash-list');
+            if (!listEl) return;
+            
+            if (!state.trash || state.trash.length === 0) {
+                listEl.innerHTML = '<div class="empty-state text-center py-12"><i data-lucide="trash-2" class="w-12 h-12 mx-auto text-gray-300 mb-3"></i><p class="text-gray-400 text-sm">Your Recycle Bin is empty</p></div>';
+            } else {
+                listEl.innerHTML = state.trash.map(trashEntry => {
+                    const item = trashEntry.item;
+                    let typeLabel = trashEntry.type.toUpperCase();
+                    if (trashEntry.type === 'projectTask') typeLabel = 'SUBTASK';
+                    
+                    let titleText = '';
+                    if (trashEntry.type === 'project') titleText = item.name;
+                    else if (trashEntry.type === 'note') titleText = item.title;
+                    else titleText = item.text;
+
+                    let iconName = 'trash-2';
+                    let typeBadgeClass = 'bg-gray-100 text-gray-600 border-gray-200';
+                    
+                    if (trashEntry.type === 'task' || trashEntry.type === 'projectTask') {
+                        iconName = 'check-square';
+                        typeBadgeClass = 'bg-indigo-50 text-indigo-700 border-indigo-100';
+                    } else if (trashEntry.type === 'project') {
+                        iconName = 'folder';
+                        typeBadgeClass = 'bg-blue-50 text-blue-700 border-blue-100';
+                    } else if (trashEntry.type === 'shopping') {
+                        iconName = 'shopping-cart';
+                        typeBadgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-100';
+                    } else if (trashEntry.type === 'braindump') {
+                        iconName = 'brain';
+                        typeBadgeClass = 'bg-amber-50 text-amber-700 border-amber-100';
+                    } else if (trashEntry.type === 'note') {
+                        iconName = 'file-text';
+                        typeBadgeClass = 'bg-purple-50 text-purple-700 border-purple-100';
+                    }
+
+                    return '<div class="glass-card rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-gray-100 hover:shadow-md transition-shadow">' +
+                        '<div class="flex items-center gap-3 min-w-0 flex-1">' +
+                            '<div class="w-9 h-9 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0 text-gray-500">' +
+                                '<i data-lucide="' + iconName + '" class="w-4 h-4"></i>' +
+                            '</div>' +
+                            '<div class="min-w-0 flex-grow">' +
+                                '<div class="flex flex-wrap items-center gap-2 mb-1">' +
+                                    '<span class="text-[9px] font-bold px-2 py-0.5 rounded border ' + typeBadgeClass + '">' + typeLabel + '</span>' +
+                                    '<span class="text-xs text-gray-400">' + formatDate(trashEntry.deletedDate) + '</span>' +
+                                    (trashEntry.type === 'projectTask' && item.projectId ? `<span class="text-[9px] text-indigo-500 font-semibold bg-indigo-50/50 px-1.5 py-0.5 rounded">Project Linked</span>` : '') +
+                                '</div>' +
+                                '<p class="text-sm font-semibold text-gray-800 truncate">' + escapeHtml(titleText || 'Untitled') + '</p>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="flex items-center gap-2 flex-shrink-0 justify-end">' +
+                            '<button onclick="restoreTrashItem(' + trashEntry.id + ')" class="p-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors flex items-center gap-1.5 text-xs font-semibold" title="Restore">' +
+                                '<i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>' +
+                                '<span>Restore</span>' +
+                            '</button>' +
+                            '<button onclick="deletePermanently(' + trashEntry.id + ')" class="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors flex items-center gap-1.5 text-xs font-semibold" title="Delete Permanently">' +
+                                '<i data-lucide="trash-2" class="w-3.5 h-3.5"></i>' +
+                                '<span>Erase</span>' +
+                            '</button>' +
+                        '</div>' +
+                        '</div>';
+                }).join('');
+            }
+            lucide.createIcons();
+        }
+
+        function restoreTrashItem(trashId) {
+            const index = state.trash.findIndex(t => t.id === trashId);
+            if (index === -1) return;
+            
+            const entry = state.trash[index];
+            pushHistory();
+            
+            if (entry.type === 'task' || entry.type === 'projectTask') {
+                state.tasks.push(entry.item);
+            } else if (entry.type === 'project') {
+                state.projects.push(entry.item);
+            } else if (entry.type === 'shopping') {
+                state.shoppingList.push(entry.item);
+            } else if (entry.type === 'braindump') {
+                state.brainDumps.push(entry.item);
+            } else if (entry.type === 'note') {
+                state.notes.unshift(entry.item);
+                state.currentNoteId = entry.item.id;
+            }
+            
+            state.trash.splice(index, 1);
+            saveState();
+            renderTrash();
+            updateDashboard();
+        }
+
+        function deletePermanently(trashId) {
+            if (confirm("Are you sure you want to permanently erase this item? This action cannot be undone.")) {
+                pushHistory();
+                state.trash = state.trash.filter(t => t.id !== trashId);
+                saveState();
+                renderTrash();
+            }
+        }
+
+        function emptyTrash() {
+            if (!state.trash || state.trash.length === 0) {
+                alert("Recycle Bin is already empty.");
+                return;
+            }
+            if (confirm("Are you sure you want to permanently empty the Recycle Bin? All deleted items will be erased forever.")) {
+                pushHistory();
+                state.trash = [];
+                saveState();
+                renderTrash();
+            }
+        }
+
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+            const now = new Date();
+            const diff = now - date;
+            if (diff < 60000) return 'Just now';
+            if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+            if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function exportData() {
+            const data = JSON.stringify({
+                projects: state.projects,
+                tasks: state.tasks,
+                shoppingList: state.shoppingList,
+                brainDumps: state.brainDumps,
+                notes: state.notes,
+                trash: state.trash
+            }, null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'lifeos-backup-' + new Date().toISOString().split('T')[0] + '.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function triggerImport() {
+            document.getElementById('import-file-input').click();
+        }
+
+        function handleImportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    
+                    if (!parsed.projects && !parsed.tasks && !parsed.shoppingList && !parsed.brainDumps && !parsed.notes && !parsed.trash) {
+                        alert("Invalid file format. Please select a valid Life OS backup JSON file.");
+                        return;
+                    }
+
+                    if (confirm("Are you sure you want to import this data? It will merge with your current items and sync to the cloud.")) {
+                        pushHistory();
+                        
+                        const mergeList = (current, imported) => {
+                            const map = new Map((current || []).map(item => [item.id, item]));
+                            (imported || []).forEach(item => {
+                                map.set(item.id, item);
+                            });
+                            return Array.from(map.values());
+                        };
+
+                        state.projects = mergeList(state.projects, parsed.projects);
+                        state.tasks = mergeList(state.tasks, parsed.tasks);
+                        state.shoppingList = mergeList(state.shoppingList, parsed.shoppingList);
+                        state.brainDumps = mergeList(state.brainDumps, parsed.brainDumps);
+                        state.notes = mergeList(state.notes, parsed.notes);
+                        state.trash = mergeList(state.trash, parsed.trash);
+
+                        saveState();
+                        refreshActivePage();
+                        
+                        alert("Data successfully imported and synced to the cloud!");
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert("Error reading backup file: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadState();
+            updateDashboard();
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
