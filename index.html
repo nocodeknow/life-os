@@ -294,6 +294,35 @@
             color: #9ca3af;
             cursor: text;
         }
+
+        :root {
+            --sidebar-width: 288px;
+        }
+
+        #sidebar {
+            width: var(--sidebar-width, 288px) !important;
+        }
+
+        @media (min-width: 768px) {
+            main {
+                margin-left: var(--sidebar-width, 288px) !important;
+            }
+        }
+
+        #sidebar-resizer {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 6px;
+            height: 100%;
+            cursor: col-resize;
+            z-index: 50;
+            transition: background-color 0.2s ease, border-right 0.2s ease;
+        }
+        #sidebar-resizer:hover, #sidebar-resizer.dragging {
+            background-color: rgba(79, 70, 229, 0.08);
+            border-right: 3px solid #4f46e5;
+        }
     </style>
 </head>
 <body class="overflow-hidden">
@@ -352,6 +381,9 @@
                     <span>Log Out</span>
                 </button>
             </div>
+            
+            <!-- Sidebar Resizer -->
+            <div id="sidebar-resizer"></div>
         </aside>
 
         <!-- Main Content -->
@@ -3399,9 +3431,51 @@
             event.target.value = '';
         }
 
+        function initSidebarResizer() {
+            const resizer = document.getElementById('sidebar-resizer');
+            if (!resizer) return;
+
+            // Load saved width
+            const savedWidth = localStorage.getItem('sidebar-width');
+            if (savedWidth) {
+                document.documentElement.style.setProperty('--sidebar-width', savedWidth + 'px');
+            }
+
+            let isDragging = false;
+
+            resizer.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                isDragging = true;
+                resizer.classList.add('dragging');
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+
+                let newWidth = e.clientX;
+                if (newWidth < 200) newWidth = 200;
+                if (newWidth > 480) newWidth = 480;
+
+                document.documentElement.style.setProperty('--sidebar-width', newWidth + 'px');
+                localStorage.setItem('sidebar-width', newWidth);
+            });
+
+            document.addEventListener('mouseup', function() {
+                if (isDragging) {
+                    isDragging = false;
+                    resizer.classList.remove('dragging');
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                }
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             loadState();
             updateDashboard();
+            initSidebarResizer();
             lucide.createIcons();
         });
     </script>
