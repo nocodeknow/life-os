@@ -12,6 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
@@ -21,6 +22,18 @@
                 }
             }
         }
+    </script>
+    <script>
+        // Run immediately to prevent theme flashing
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
     </script>
     <style>
         * {
@@ -323,6 +336,198 @@
             background-color: rgba(79, 70, 229, 0.08);
             border-right: 3px solid #4f46e5;
         }
+
+        /* Dark Mode Styling */
+        .dark body {
+            background-color: #0f172a !important; /* Slate 900 */
+            color: #cbd5e1 !important; /* Slate 300 */
+        }
+
+        .dark .sidebar-glass {
+            background: #1e293b !important; /* Slate 800 */
+            border-right: 1px solid #334155 !important; /* Slate 700 */
+        }
+
+        .dark .bg-white {
+            background-color: #1e293b !important; /* Slate 800 */
+        }
+
+        .dark .bg-gray-50, 
+        .dark .bg-gray-50\/75,
+        .dark .bg-gray-50\/50,
+        .dark .bg-slate-50,
+        .dark .bg-slate-50\/50 {
+            background-color: #0f172a !important; /* Slate 900 */
+        }
+
+        .dark .text-gray-900,
+        .dark .text-slate-900 {
+            color: #f8fafc !important; /* Slate 50 */
+        }
+
+        .dark .text-gray-800,
+        .dark .text-slate-800 {
+            color: #f1f5f9 !important; /* Slate 100 */
+        }
+
+        .dark .text-gray-700,
+        .dark .text-slate-700 {
+            color: #cbd5e1 !important; /* Slate 300 */
+        }
+
+        .dark .text-gray-600,
+        .dark .text-slate-600 {
+            color: #94a3b8 !important; /* Slate 400 */
+        }
+
+        .dark .text-gray-500,
+        .dark .text-slate-500,
+        .dark .text-gray-400 {
+            color: #64748b !important; /* Slate 500 */
+        }
+
+        .dark .border-gray-100, 
+        .dark .border-gray-200, 
+        .dark .border-gray-300,
+        .dark .border-slate-100,
+        .dark .border-slate-200,
+        .dark .border-slate-300,
+        .dark .border-gray-150\/50 {
+            border-color: #334155 !important; /* Slate 700 */
+        }
+
+        /* Overlay blur transparent colors */
+        .dark .bg-white\/90,
+        .dark .bg-white\/80,
+        .dark .bg-white\/70,
+        .dark .bg-white\/50 {
+            background-color: rgba(30, 41, 59, 0.8) !important;
+        }
+
+        /* Inputs, selectors, textareas */
+        .dark input[type="text"],
+        .dark input[type="email"],
+        .dark input[type="password"],
+        .dark textarea,
+        .dark select {
+            background-color: #1e293b !important;
+            color: #f8fafc !important;
+            border-color: #334155 !important;
+        }
+        .dark input::placeholder, .dark textarea::placeholder {
+            color: #64748b !important;
+        }
+
+        /* Custom resizer handle in dark mode */
+        .dark #sidebar-resizer:hover, .dark #sidebar-resizer.dragging {
+            background-color: rgba(129, 140, 248, 0.08) !important;
+            border-right: 3px solid #818cf8 !important;
+        }
+
+        /* Navigation items */
+        .dark .nav-item {
+            color: #94a3b8 !important;
+        }
+        .dark .nav-item:hover {
+            background-color: #334155 !important;
+            color: #f8fafc !important;
+        }
+        .dark .nav-item.active {
+            background-color: #4f46e5 !important;
+            color: white !important;
+        }
+
+        /* Tab buttons active state */
+        .dark .tab-btn.active {
+            color: #818cf8 !important;
+        }
+        .dark .tab-btn::after {
+            background-color: #818cf8 !important;
+        }
+        .dark .tab-btn.text-indigo-600 {
+            color: #818cf8 !important;
+        }
+
+        /* Mobile nav item active state */
+        .dark .mobile-nav-item.active {
+            color: #818cf8 !important;
+        }
+        .dark .mobile-nav-item.active::before {
+            background-color: #818cf8 !important;
+        }
+
+        /* Custom priorities in dark mode */
+        .dark .priority-urgent {
+            background-color: rgba(239, 68, 68, 0.15) !important;
+            color: #fca5a5 !important;
+            border-color: rgba(239, 68, 68, 0.3) !important;
+        }
+        .dark .priority-need {
+            background-color: rgba(245, 158, 11, 0.15) !important;
+            color: #fde047 !important;
+            border-color: rgba(245, 158, 11, 0.3) !important;
+        }
+        .dark .priority-want {
+            background-color: rgba(99, 102, 241, 0.15) !important;
+            color: #a5b4fc !important;
+            border-color: rgba(99, 102, 241, 0.3) !important;
+        }
+
+        /* Statuses in dark mode */
+        .dark .bg-amber-50 {
+            background-color: rgba(245, 158, 11, 0.15) !important;
+            color: #fde047 !important;
+            border-color: rgba(245, 158, 11, 0.3) !important;
+        }
+        .dark .bg-blue-50 {
+            background-color: rgba(59, 130, 246, 0.15) !important;
+            color: #93c5fd !important;
+            border-color: rgba(59, 130, 246, 0.3) !important;
+        }
+        .dark .bg-gray-100 {
+            background-color: #334155 !important;
+            color: #cbd5e1 !important;
+            border-color: #475569 !important;
+        }
+
+        /* Notes item overrides */
+        .dark .note-item.active {
+            background-color: rgba(79, 70, 229, 0.15) !important;
+            border-left: 3px solid #818cf8 !important;
+            color: #f1f5f9 !important;
+        }
+        .dark .note-item:hover {
+            background-color: #334155 !important;
+        }
+
+        /* Custom checkmarks */
+        .dark .checkbox-custom {
+            border-color: #475569 !important;
+        }
+        .dark .checkbox-custom:checked {
+            background-color: #4f46e5 !important;
+            border-color: #4f46e5 !important;
+        }
+
+        /* Scrollbars in dark mode */
+        .dark .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.3) !important;
+        }
+        .dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.5) !important;
+        }
+
+        /* Mobile note editor in dark mode */
+        .dark #mobile-note-editor {
+            background-color: #0f172a !important;
+        }
+
+        /* Branded text gradient in dark mode */
+        .dark .gradient-text {
+            background: linear-gradient(135deg, #a5b4fc 0%, #c084fc 100%) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+        }
     </style>
 </head>
 <body class="overflow-hidden">
@@ -367,6 +572,11 @@
             </nav>
 
             <div class="p-4 space-y-2 border-t border-gray-150/50">
+                <!-- Theme Toggle Button -->
+                <button onclick="toggleTheme()" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors">
+                    <i id="theme-toggle-icon" data-lucide="moon" class="w-4 h-4"></i>
+                    <span id="theme-toggle-text">Dark Mode</span>
+                </button>
                 <input type="file" id="import-file-input" accept=".json" onchange="handleImportFile(event)" class="hidden">
                 <button onclick="exportData()" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors">
                     <i data-lucide="download" class="w-4 h-4"></i>
@@ -799,6 +1009,11 @@
         <span class="w-1.5 h-1.5 rounded-full bg-gray-400" id="mobile-sync-status-dot"></span>
         <span id="mobile-sync-status-text">Connecting...</span>
     </div>
+
+    <!-- Mobile Theme Toggle -->
+    <button onclick="toggleTheme()" class="md:hidden fixed top-4 left-4 z-40 bg-white/90 backdrop-blur border border-gray-200 w-8 h-8 rounded-full shadow-sm flex items-center justify-center text-gray-500 hover:text-indigo-600 transition-colors">
+        <i id="mobile-theme-toggle-icon" data-lucide="moon" class="w-4 h-4"></i>
+    </button>
 
     <!-- Authentication Overlay -->
     <div id="auth-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md opacity-100 pointer-events-auto transition-all duration-300">
@@ -3472,10 +3687,49 @@
             });
         }
 
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateThemeUI();
+        }
+
+        function updateThemeUI() {
+            const isDark = document.documentElement.classList.contains('dark');
+            
+            // Desktop theme toggle
+            const themeIcon = document.getElementById('theme-toggle-icon');
+            const themeText = document.getElementById('theme-toggle-text');
+            if (themeIcon && themeText) {
+                if (isDark) {
+                    themeIcon.setAttribute('data-lucide', 'sun');
+                    themeText.textContent = 'Light Mode';
+                } else {
+                    themeIcon.setAttribute('data-lucide', 'moon');
+                    themeText.textContent = 'Dark Mode';
+                }
+            }
+
+            // Mobile theme toggle
+            const mobileThemeIcon = document.getElementById('mobile-theme-toggle-icon');
+            if (mobileThemeIcon) {
+                if (isDark) {
+                    mobileThemeIcon.setAttribute('data-lucide', 'sun');
+                } else {
+                    mobileThemeIcon.setAttribute('data-lucide', 'moon');
+                }
+            }
+
+            // Re-render Lucide icons for the updated attribute
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             loadState();
             updateDashboard();
             initSidebarResizer();
+            updateThemeUI();
             lucide.createIcons();
         });
     </script>
