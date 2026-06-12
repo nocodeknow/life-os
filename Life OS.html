@@ -2365,6 +2365,35 @@
             }
         }
 
+        function getShoppingPriorityDropdown(item) {
+            let selectClass = 'px-2.5 py-0.5 rounded-full text-xs font-semibold border cursor-pointer focus:ring-1 focus:ring-indigo-100 transition-all appearance-none text-center ';
+            if (item.priority === 'urgent') selectClass += 'priority-urgent';
+            else if (item.priority === 'need') selectClass += 'priority-need';
+            else if (item.priority === 'want') selectClass += 'priority-want';
+            else selectClass += 'bg-gray-50 text-gray-500 border-gray-200';
+            
+            return `
+                <select class="${selectClass}" onchange="updateShoppingPriority(${item.id}, this.value)">
+                    <option value="urgent" ${item.priority === 'urgent' ? 'selected' : ''}>Urgent</option>
+                    <option value="need" ${item.priority === 'need' ? 'selected' : ''}>Need</option>
+                    <option value="want" ${item.priority === 'want' ? 'selected' : ''}>Want</option>
+                </select>
+            `;
+        }
+
+        function updateShoppingPriority(id, newPriority) {
+            const item = state.shoppingList.find(i => i.id === id);
+            if (item) {
+                if (item.priority !== newPriority) {
+                    pushHistory();
+                    item.priority = newPriority;
+                    saveState();
+                    renderShoppingList();
+                    updateDashboard();
+                }
+            }
+        }
+
         function addNewInlineShoppingItem() {
             pushHistory();
             const newId = Date.now();
@@ -2466,7 +2495,7 @@
                                     ${getShoppingStatusDropdown(item)}
                                 </td>
                                 <td class="py-3 px-4 whitespace-nowrap">
-                                    <span class="priority-${item.priority} text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0">${priorityLabel}</span>
+                                    ${getShoppingPriorityDropdown(item)}
                                 </td>
                                 <td class="py-3 px-4 whitespace-nowrap text-right pr-6">
                                     <div class="flex items-center gap-2 justify-end opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-150">
