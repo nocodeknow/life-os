@@ -1078,6 +1078,20 @@
         </div>
     </div>
 
+    <!-- Sync Error / Offline Overlay -->
+    <div id="sync-error-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md opacity-100 pointer-events-auto transition-all duration-300 hidden">
+        <div class="glass-card w-full max-w-md mx-4 rounded-2xl overflow-hidden shadow-2xl p-8 flex flex-col bg-white border border-gray-200 text-center">
+            <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i data-lucide="cloud-off" class="w-8 h-8"></i>
+            </div>
+            <h2 class="font-display font-extrabold text-2xl text-gray-900 mb-2">Sync Connection Lost</h2>
+            <p class="text-sm text-gray-500 font-medium mb-6">We were unable to sync with the cloud database. Editing is disabled to prevent data loss. Please check your connection and reload.</p>
+            <button onclick="window.location.reload()" class="w-full btn-primary py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-transform">
+                <span>Reload Page</span>
+            </button>
+        </div>
+    </div>
+
     <div id="global-history-controls" class="fixed bottom-20 md:bottom-8 right-6 flex items-center gap-2 transform translate-y-24 opacity-0 transition-all duration-300 z-50">
         <button id="global-undo-btn" onclick="undo()" class="bg-gray-900 text-white px-4 py-3 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex items-center gap-2 hover:bg-gray-800 hover:scale-105 active:scale-95 transition-all">
             <i data-lucide="undo-2" class="w-4 h-4"></i>
@@ -1646,6 +1660,28 @@
         let authMode = 'signIn';
         let isSyncing = false;
         let syncTimeout = null;
+        let isInitialSyncCompleted = false;
+
+        function showSyncErrorOverlay() {
+            const overlay = document.getElementById('sync-error-overlay');
+            if (overlay) {
+                overlay.classList.remove('hidden');
+                overlay.offsetHeight; // force reflow
+                overlay.classList.remove('pointer-events-none', 'opacity-0');
+                overlay.classList.add('pointer-events-auto', 'opacity-100');
+            }
+        }
+
+        function hideSyncErrorOverlay() {
+            const overlay = document.getElementById('sync-error-overlay');
+            if (overlay) {
+                overlay.classList.add('pointer-events-none', 'opacity-0');
+                overlay.classList.remove('pointer-events-auto', 'opacity-100');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                }, 300);
+            }
+        }
 
         function setSyncStatus(status, text) {
             const dot = document.getElementById('sync-status-dot');
@@ -1772,26 +1808,11 @@
                         }
                         if (logoutBtn) logoutBtn.classList.add('hidden');
                         setSyncStatus('offline', 'Please Sign In');
+                        hideSyncErrorOverlay();
                     }
                 });
             } else {
-                loadStateLocal();
                 setSyncStatus('offline', 'Offline Mode');
-            }
-        }
-
-        function loadStateLocal() {
-            const saved = localStorage.getItem('lifeOS_data');
-            if (saved) {
-                const parsed = JSON.parse(saved);
-                state.projects = parsed.projects || [];
-                state.tasks = parsed.tasks || [];
-                state.shoppingList = parsed.shoppingList || [];
-                state.brainDumps = parsed.brainDumps || [];
-                state.notes = parsed.notes || [];
-                state.trash = parsed.trash || [];
-                
-                runStateMigrations();
             }
         }
 
@@ -1813,7 +1834,7 @@
             try {
                 const { data, error } = await supabaseClient
                     .from('user_data')
-                    .select('state, updated_at')
+                    .select('state')
                     .eq('user_id', supabaseUser.id)
                     .maybeSingle();
 
@@ -1821,52 +1842,34 @@
 
                 if (data) {
                     const cloudState = data.state;
-                    const cloudUpdatedAt = new Date(data.updated_at).getTime();
+                    state.projects = cloudState.projects || [];
+                    state.tasks = cloudState.tasks || [];
+                    state.shoppingList = cloudState.shoppingList || [];
+                    state.brainDumps = cloudState.brainDumps || [];
+                    state.notes = cloudState.notes || [];
+                    state.trash = cloudState.trash || [];
 
-                    const localSaved = localStorage.getItem('lifeOS_data');
-                    const localUpdatedAt = parseInt(localStorage.getItem('lifeOS_updated_at') || '0');
-
-                    if (localSaved && localUpdatedAt > cloudUpdatedAt) {
-                        setSyncStatus('syncing', 'Pushing local...');
-                        await pushStateToSupabase(JSON.parse(localSaved), localUpdatedAt);
-                    } else {
-                        state.projects = cloudState.projects || [];
-                        state.tasks = cloudState.tasks || [];
-                        state.shoppingList = cloudState.shoppingList || [];
-                        state.brainDumps = cloudState.brainDumps || [];
-                        state.notes = cloudState.notes || [];
-                        state.trash = cloudState.trash || [];
-
-                        runStateMigrations();
-
-                        localStorage.setItem('lifeOS_data', JSON.stringify({
-                            projects: state.projects,
-                            tasks: state.tasks,
-                            shoppingList: state.shoppingList,
-                            brainDumps: state.brainDumps,
-                            notes: state.notes,
-                            trash: state.trash
-                        }));
-                        localStorage.setItem('lifeOS_updated_at', cloudUpdatedAt.toString());
-
-                        refreshActivePage();
-                    }
-                    setSyncStatus('synced', 'Cloud Synced');
+                    runStateMigrations();
+                    refreshActivePage();
                 } else {
-                    const localSaved = localStorage.getItem('lifeOS_data');
-                    if (localSaved) {
-                        const parsed = JSON.parse(localSaved);
-                        const updatedAt = Date.now();
-                        await pushStateToSupabase(parsed, updatedAt);
-                    } else {
-                        saveState();
-                    }
-                    setSyncStatus('synced', 'Cloud Synced');
+                    // New account, initialize empty cloud record
+                    state.projects = [];
+                    state.tasks = [];
+                    state.shoppingList = [];
+                    state.brainDumps = [];
+                    state.notes = [];
+                    state.trash = [];
+                    await pushStateToSupabase(state, Date.now());
                 }
+                
+                isInitialSyncCompleted = true;
+                setSyncStatus('synced', 'Cloud Synced');
+                hideSyncErrorOverlay();
             } catch (err) {
                 console.error('Sync error:', err);
                 setSyncStatus('error', 'Sync Error');
-                loadStateLocal();
+                isInitialSyncCompleted = false;
+                showSyncErrorOverlay();
             }
         }
 
@@ -1889,6 +1892,11 @@
         }
 
         function saveState() {
+            if (!isInitialSyncCompleted) {
+                showSyncErrorOverlay();
+                return;
+            }
+
             const stateData = {
                 projects: state.projects,
                 tasks: state.tasks,
@@ -1899,9 +1907,6 @@
             };
             const updatedAt = Date.now();
 
-            localStorage.setItem('lifeOS_data', JSON.stringify(stateData));
-            localStorage.setItem('lifeOS_updated_at', updatedAt.toString());
-
             if (supabaseClient && supabaseUser) {
                 setSyncStatus('syncing', 'Saving...');
                 if (syncTimeout) clearTimeout(syncTimeout);
@@ -1911,6 +1916,7 @@
                         setSyncStatus('synced', 'Cloud Synced');
                     } catch (err) {
                         setSyncStatus('error', 'Sync Failed');
+                        showSyncErrorOverlay();
                     }
                 }, 1500);
             }
